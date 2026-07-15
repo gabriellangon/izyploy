@@ -60,7 +60,7 @@ refactor: extract deployment runtime interface
 ### D-001 — Product direction
 
 - Date: 2026-07-15
-- Status: accepted
+- Status: superseded in part by D-009
 - Decision: Izyploy is a learning-oriented mini-PaaS that deploys a trusted public Git repository containing a root `Dockerfile`.
 - Reason: the workflow is demonstrable while covering practical Platform Engineering concepts without attempting to reproduce a complete commercial platform.
 
@@ -120,9 +120,22 @@ refactor: extract deployment runtime interface
   - The Docker socket and third-party `Dockerfile` builds are trusted-code-only capabilities in the MVP.
   - Docker must allocate the dynamic host port to avoid application-side port-selection races.
 
+### D-009 — Monorepo build context
+
+- Date: 2026-07-15
+- Status: accepted
+- Decision: deployment requests accept an optional `build_context`, with `.` as the default. It may identify the repository root or a relative subdirectory. Izyploy always uses a file named `Dockerfile` at the root of that context; a configurable `dockerfile_path` is outside the MVP.
+- Reason: this supports common monorepo layouts and lets one modular example repository contain multiple test applications without adding arbitrary Dockerfile-path complexity.
+- Constraints:
+  - absolute paths and `..` segments are rejected;
+  - the resolved directory must remain inside the cloned repository;
+  - symlink-based escapes must be rejected;
+  - the context must exist and contain a regular root `Dockerfile`.
+- Example repository: `izyploy-examples`, with `java`, `php`, `python`, and `rust` contexts.
+
 ## Open decisions
 
-No technical decision is currently open for milestone 0. The trusted public test repository remains to be selected.
+No technical decision is currently open for milestone 0. The `izyploy-examples` repository has been selected but has not yet been created or populated.
 
 ## Current state
 
@@ -130,4 +143,5 @@ No technical decision is currently open for milestone 0. The trusted public test
 - Current branch: `feat/milestone-0-project-framing`.
 - Application code: not started.
 - Prepared next milestone: milestone 1 — manual Docker workflow.
-- Next action: select or create the trusted public test repository.
+- Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
+- Next action: validate the updated framing, complete milestone 0, then create and populate `izyploy-examples` for milestone 1.

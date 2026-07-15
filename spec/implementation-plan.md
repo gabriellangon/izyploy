@@ -17,7 +17,7 @@ Legend:
   - [x] Define the implementation roadmap.
   - [x] Define the Git and project-knowledge conventions.
   - [x] Validate the technical choices needed before application code.
-  - [ ] Select or create the trusted public test repository.
+  - [x] Select the structure and name of the trusted public test repository.
 - [ ] **Milestone 1 — Manual Docker workflow**
 - [ ] **Milestone 2 — Rust API skeleton**
 - [ ] **Milestone 3 — Application model and persistence**
@@ -61,7 +61,8 @@ Les choix suivants sont validés pour le MVP :
 - tâches Tokio en arrière-plan avant l'introduction d'une vraie file ;
 - ports dynamiques avant Traefik et les sous-domaines ;
 - exécution locale de l'API avant sa dockerisation ;
-- dépôts GitHub publics et de confiance uniquement.
+- dépôts GitHub publics et de confiance uniquement ;
+- `build_context` optionnel avec `.` par défaut et `Dockerfile` fixe à la racine du contexte.
 
 Ces choix sont conçus pour isoler les apprentissages. Leurs limites et les conditions de leur remplacement sont consignées dans `knowledge.md`. Ils pourront évoluer lors d'un milestone ultérieur au moyen d'une nouvelle décision explicite.
 
@@ -76,7 +77,9 @@ Travail :
 - relire `product-spec.md` ;
 - valider le vocabulaire, le périmètre et les critères de réussite ;
 - choisir les décisions techniques encore ouvertes ;
-- choisir ou créer un petit dépôt public de test.
+- choisir la structure et le nom d'un petit dépôt public de test.
+
+Le dépôt retenu est `izyploy-examples`. Il contiendra une application par sous-dossier (`java`, `php`, `python` et `rust`), chaque sous-dossier constituant un contexte de build autonome.
 
 Validation : le MVP peut être expliqué en une phrase et son premier scénario peut être décrit sans ambiguïté.
 
@@ -91,7 +94,8 @@ Notions : contexte de build, image, conteneur, port interne, port hôte, nom, é
 Travail :
 
 - cloner le dépôt de test dans un dossier temporaire ;
-- construire son image ;
+- choisir un sous-dossier comme contexte de build ;
+- construire son image depuis ce contexte ;
 - démarrer le conteneur avec un port publié ;
 - vérifier l'application dans le navigateur ;
 - consulter ses logs ;
@@ -135,7 +139,7 @@ Travail :
 - créer la première migration SQLite ;
 - implémenter `POST /applications` ;
 - implémenter les routes de lecture ;
-- valider l'URL, la branche et le port ;
+- valider l'URL, la branche, le contexte de build et le port ;
 - tester les entrées valides et invalides.
 
 Livrable : une application créée avec l'état `queued` survit au redémarrage de l'API.
@@ -155,7 +159,8 @@ Travail :
 - lancer une tâche après la création ;
 - passer de `queued` à `cloning` ;
 - cloner le dépôt dans un espace dédié ;
-- vérifier le `Dockerfile` ;
+- résoudre et confiner le contexte de build dans le dépôt ;
+- vérifier le `Dockerfile` à la racine de ce contexte ;
 - enregistrer les logs ;
 - passer à `failed` avec une erreur utile en cas d'échec.
 
@@ -174,7 +179,7 @@ Notions : build context, tags, cache, flux de logs, code de sortie et nettoyage 
 Travail :
 
 - générer un tag interne sûr ;
-- exécuter le build sans passer par un shell ;
+- exécuter le build depuis le contexte sélectionné sans passer par un shell ;
 - faire évoluer l'état vers `building` ;
 - diffuser ou stocker les logs du build ;
 - identifier l'image avec des labels Izyploy.
