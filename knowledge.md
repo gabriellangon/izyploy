@@ -152,4 +152,5 @@ No technical decision is currently open for milestone 1.
 - Manual HTTP verification: `/` returns the PHP Hello World payload and `/health` returns `{"status":"ok"}` through `http://127.0.0.1:8080`.
 - Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
-- Next action: document the complete manual Docker workflow.
+- Manual workflow documentation: `docs/manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
+- Next action: review the milestone 1 learning outcomes and obtain explicit user validation before marking the milestone complete.

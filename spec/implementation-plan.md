@@ -27,7 +27,7 @@ Legend:
   - [x] Verify `/` and `/health` from the host.
   - [x] Inspect the container logs and metadata.
   - [x] Stop and remove the container and image.
-  - [ ] Document the complete manual workflow.
+  - [x] Document the complete manual workflow.
 - [ ] **Milestone 2 — Rust API skeleton**
 - [ ] **Milestone 3 — Application model and persistence**
 - [ ] **Milestone 4 — Background Git clone**
