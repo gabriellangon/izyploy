@@ -107,20 +107,27 @@ refactor: extract deployment runtime interface
 - Decision: the `Roadmap status` section at the top of `spec/implementation-plan.md` is the source of truth for completed, active, and pending work. Only one milestone may be active, and completion requires explicit user validation.
 - Reason: the detailed plan explains the work but did not provide an immediate view of progress or remaining work.
 
+### D-008 — Initial MVP technical stack
+
+- Date: 2026-07-15
+- Status: accepted
+- Decision: the MVP uses Rust with Axum, SQLite with SQLx, Tokio background tasks, the Docker CLI, dynamic host ports, local API execution before containerization, and trusted public GitHub repositories only.
+- Reason: these choices keep each learning step observable and minimize infrastructure before the core deployment workflow works.
+- Constraints:
+  - SQLite is suitable for one host but will be reconsidered before distributed workers, where PostgreSQL is the likely replacement.
+  - Tokio tasks are intentionally temporary and require restart reconciliation; a durable queue will replace them in milestone 14.
+  - Docker commands must be invoked with structured arguments and never by concatenating user input into a shell command.
+  - The Docker socket and third-party `Dockerfile` builds are trusted-code-only capabilities in the MVP.
+  - Docker must allocate the dynamic host port to avoid application-side port-selection races.
+
 ## Open decisions
 
-The following proposals must be validated at the relevant milestone before becoming accepted decisions:
-
-- Axum as the Rust HTTP framework;
-- SQLite with SQLx for MVP persistence;
-- Docker CLI for the first integration, with a possible later move to `bollard`;
-- Tokio background tasks before introducing a distributed queue;
-- dynamic host ports before introducing Traefik.
+No technical decision is currently open for milestone 0. The trusted public test repository remains to be selected.
 
 ## Current state
 
 - Current milestone: milestone 0 — project framing.
-- Current branch: `feat/milestone-1-docker-manual`.
+- Current branch: `feat/milestone-0-project-framing`.
 - Application code: not started.
 - Prepared next milestone: milestone 1 — manual Docker workflow.
-- Next action: validate the initial technical choices and select or create a trusted public test repository.
+- Next action: select or create the trusted public test repository.

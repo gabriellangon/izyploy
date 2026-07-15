@@ -16,7 +16,7 @@ Legend:
   - [x] Define and validate the product scope.
   - [x] Define the implementation roadmap.
   - [x] Define the Git and project-knowledge conventions.
-  - [ ] Validate the technical choices needed before application code.
+  - [x] Validate the technical choices needed before application code.
   - [ ] Select or create the trusted public test repository.
 - [ ] **Milestone 1 — Manual Docker workflow**
 - [ ] **Milestone 2 — Rust API skeleton**
@@ -51,9 +51,9 @@ Pour chaque étape :
 
 Le code d'une étape ne doit pas anticiper plusieurs étapes futures. Une solution simple et remplaçable est préférable tant que le concept courant n'est pas maîtrisé.
 
-## 2. Décisions proposées à valider
+## 2. Décisions techniques initiales
 
-Avant d'écrire le squelette applicatif, nous validerons ces choix :
+Les choix suivants sont validés pour le MVP :
 
 - Rust et Axum pour l'API ;
 - Docker CLI pour la première intégration, puis éventuellement l'API Docker avec `bollard` ;
@@ -63,7 +63,7 @@ Avant d'écrire le squelette applicatif, nous validerons ces choix :
 - exécution locale de l'API avant sa dockerisation ;
 - dépôts GitHub publics et de confiance uniquement.
 
-Ces choix sont conçus pour isoler les apprentissages. Ils ne sont pas encore des décisions irréversibles.
+Ces choix sont conçus pour isoler les apprentissages. Leurs limites et les conditions de leur remplacement sont consignées dans `knowledge.md`. Ils pourront évoluer lors d'un milestone ultérieur au moyen d'une nouvelle décision explicite.
 
 ## 3. Milestones
 
