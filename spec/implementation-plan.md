@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-15
 
-Current milestone: **Milestone 0 — Project framing (in progress)**
+Current milestone: **Milestone 0 — Project framing (completed)**
 
 Legend:
 
@@ -12,7 +12,7 @@ Legend:
 - `[ ]` not completed;
 - **In progress** identifies the only milestone currently active.
 
-- [ ] **Milestone 0 — Project framing** — **In progress**
+- [x] **Milestone 0 — Project framing**
   - [x] Define and validate the product scope.
   - [x] Define the implementation roadmap.
   - [x] Define the Git and project-knowledge conventions.

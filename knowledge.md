@@ -135,13 +135,13 @@ refactor: extract deployment runtime interface
 
 ## Open decisions
 
-No technical decision is currently open for milestone 0. The `izyploy-examples` repository has been selected but has not yet been created or populated.
+No technical decision remains open from milestone 0. The `izyploy-examples` repository has been selected and its implementation is available in an external pull request for milestone 1 validation.
 
 ## Current state
 
-- Current milestone: milestone 0 — project framing.
+- Completed milestone: milestone 0 — project framing.
 - Current branch: `feat/milestone-0-project-framing`.
 - Application code: not started.
 - Prepared next milestone: milestone 1 — manual Docker workflow.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
-- Next action: validate the updated framing, complete milestone 0, then create and populate `izyploy-examples` for milestone 1.
+- Next action: merge milestone 0 into `main`, then create the milestone 1 branch.
