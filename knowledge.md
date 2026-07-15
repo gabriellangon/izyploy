@@ -147,4 +147,5 @@ No technical decision is currently open for milestone 1.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - First manual build context: `php`, resolved locally as `/Users/gabriel.maomy/Projects/izyploy-examples/php`.
-- Next action: build the PHP Docker image manually.
+- Manual Docker image: `izyploy-example-php:milestone-1`, built from the `php` context and verified with internal port `8080/tcp` and runtime user `app`.
+- Next action: start a container from the PHP image with a published host port.
