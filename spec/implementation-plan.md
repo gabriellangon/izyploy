@@ -21,7 +21,7 @@ Legend:
 - [ ] **Milestone 1 — Manual Docker workflow** — **In progress**
   - [x] Validate and merge the external `izyploy-examples` pull request.
   - [x] Prepare a clean local workspace for the example repository.
-  - [ ] Select one application subdirectory as the build context.
+  - [x] Select `php` as the first application build context.
   - [ ] Build its Docker image manually.
   - [ ] Start its container with a published host port.
   - [ ] Verify `/` and `/health` from the host.
