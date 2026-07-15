@@ -26,7 +26,7 @@ Legend:
   - [x] Start its container with a published host port.
   - [x] Verify `/` and `/health` from the host.
   - [x] Inspect the container logs and metadata.
-  - [ ] Stop and remove the container and image.
+  - [x] Stop and remove the container and image.
   - [ ] Document the complete manual workflow.
 - [ ] **Milestone 2 — Rust API skeleton**
 - [ ] **Milestone 3 — Application model and persistence**

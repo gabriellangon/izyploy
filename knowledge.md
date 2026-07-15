@@ -151,4 +151,5 @@ No technical decision is currently open for milestone 1.
 - Manual Docker container: `izyploy-php-manual`, running from the PHP image with `127.0.0.1:8080` published to its internal port `8080/tcp`.
 - Manual HTTP verification: `/` returns the PHP Hello World payload and `/health` returns `{"status":"ok"}` through `http://127.0.0.1:8080`.
 - Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
-- Next action: stop and remove the PHP container, then remove its image.
+- Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
+- Next action: document the complete manual Docker workflow.
