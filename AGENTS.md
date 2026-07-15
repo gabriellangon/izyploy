@@ -46,6 +46,13 @@ Treat these files as project context, not optional documentation.
 - Reference each document from the corresponding detailed milestone in `spec/implementation-plan.md`.
 - Do not duplicate roadmap status or durable architectural decisions in these documents.
 
+## User-facing commands
+
+- Use `rtk` for agent shell execution as required by the imported RTK instructions.
+- Never include `rtk` or `rtk proxy` in user-facing documentation, examples, or commands.
+- Write documented commands with the standard project CLI, such as `git`, `docker`, `cargo`, or `curl`.
+- Treat RTK as internal agent tooling, not as a project dependency or user prerequisite.
+
 ## Naming and Git
 
 - Use English for branch names, commit messages, code identifiers, application filenames, APIs, database objects, and infrastructure resources.

@@ -146,6 +146,13 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Decision: relevant milestones receive a learning document under `docs/milestones/`, named `milestone-<zero-padded-number>-<english-topic>.md` and referenced from their detailed implementation-plan section.
 - Reason: milestone-specific documents preserve reproducible workflows and learning summaries while keeping the roadmap focused on progress and `knowledge.md` focused on durable decisions.
 
+### D-011 — User-facing command portability
+
+- Date: 2026-07-16
+- Status: accepted
+- Decision: user-facing documentation and examples use standard project commands without the internal `rtk` or `rtk proxy` prefixes. Agents continue to use RTK only while executing shell commands internally.
+- Reason: RTK protects agent context but is not an Izyploy dependency; documented commands must remain portable for users and contributors.
+
 ## Open decisions
 
 No technical decision is currently open for milestone 1.

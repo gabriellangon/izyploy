@@ -8,7 +8,7 @@ This guide reproduces manually the Docker lifecycle that Izyploy will automate l
 - the Docker Engine is running;
 - TCP port `8080` is available on `127.0.0.1`.
 
-The commands below use the standard Docker CLI. In the Izyploy development environment, prefix executable commands with `rtk`, for example `rtk docker build ...`. Use `rtk proxy docker logs ...` when unfiltered container logs are needed.
+The commands below use the standard Git, Docker, and curl CLIs.
 
 ## 1. Prepare the build context
 
