@@ -144,5 +144,5 @@ No technical decision is currently open for milestone 1. The first application b
 - Current branch: `feat/milestone-1-docker-manual`.
 - Application code: not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
-- External dependency: pull request `gabriellangon/izyploy-examples#2` must be validated and merged before the documented manual workflow uses its `main` branch.
-- Next action: review the milestone 1 concepts and select the first application build context together.
+- Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
+- Next action: clone `izyploy-examples` into a temporary workspace, then select the first application build context together.
