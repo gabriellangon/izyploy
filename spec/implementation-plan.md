@@ -24,7 +24,7 @@ Legend:
   - [x] Select `php` as the first application build context.
   - [x] Build its Docker image manually.
   - [x] Start its container with a published host port.
-  - [ ] Verify `/` and `/health` from the host.
+  - [x] Verify `/` and `/health` from the host.
   - [ ] Inspect the container logs and metadata.
   - [ ] Stop and remove the container and image.
   - [ ] Document the complete manual workflow.

@@ -149,4 +149,5 @@ No technical decision is currently open for milestone 1.
 - First manual build context: `php`, resolved locally as `/Users/gabriel.maomy/Projects/izyploy-examples/php`.
 - Manual Docker image: `izyploy-example-php:milestone-1`, built from the `php` context and verified with internal port `8080/tcp` and runtime user `app`.
 - Manual Docker container: `izyploy-php-manual`, running from the PHP image with `127.0.0.1:8080` published to its internal port `8080/tcp`.
-- Next action: verify the PHP application's `/` and `/health` routes from the host.
+- Manual HTTP verification: `/` returns the PHP Hello World payload and `/health` returns `{"status":"ok"}` through `http://127.0.0.1:8080`.
+- Next action: inspect the PHP container logs and metadata.
