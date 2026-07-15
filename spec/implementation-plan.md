@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-15
 
-Current milestone: **Milestone 0 — Project framing (completed)**
+Current milestone: **Milestone 1 — Manual Docker workflow (in progress)**
 
 Legend:
 
@@ -18,7 +18,16 @@ Legend:
   - [x] Define the Git and project-knowledge conventions.
   - [x] Validate the technical choices needed before application code.
   - [x] Select the structure and name of the trusted public test repository.
-- [ ] **Milestone 1 — Manual Docker workflow**
+- [ ] **Milestone 1 — Manual Docker workflow** — **In progress**
+  - [ ] Validate and merge the external `izyploy-examples` pull request.
+  - [ ] Clone the example repository into a temporary workspace.
+  - [ ] Select one application subdirectory as the build context.
+  - [ ] Build its Docker image manually.
+  - [ ] Start its container with a published host port.
+  - [ ] Verify `/` and `/health` from the host.
+  - [ ] Inspect the container logs and metadata.
+  - [ ] Stop and remove the container and image.
+  - [ ] Document the complete manual workflow.
 - [ ] **Milestone 2 — Rust API skeleton**
 - [ ] **Milestone 3 — Application model and persistence**
 - [ ] **Milestone 4 — Background Git clone**
