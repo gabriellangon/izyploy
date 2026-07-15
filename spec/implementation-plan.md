@@ -23,7 +23,7 @@ Legend:
   - [x] Prepare a clean local workspace for the example repository.
   - [x] Select `php` as the first application build context.
   - [x] Build its Docker image manually.
-  - [ ] Start its container with a published host port.
+  - [x] Start its container with a published host port.
   - [ ] Verify `/` and `/health` from the host.
   - [ ] Inspect the container logs and metadata.
   - [ ] Stop and remove the container and image.
