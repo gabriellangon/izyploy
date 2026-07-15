@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-16
 
-Current milestone: **Milestone 1 — Manual Docker workflow (in progress)**
+Current milestone: **None — Milestone 1 completed; Milestone 2 not started**
 
 Legend:
 
@@ -18,7 +18,7 @@ Legend:
   - [x] Define the Git and project-knowledge conventions.
   - [x] Validate the technical choices needed before application code.
   - [x] Select the structure and name of the trusted public test repository.
-- [ ] **Milestone 1 — Manual Docker workflow** — **In progress**
+- [x] **Milestone 1 — Manual Docker workflow**
   - [x] Validate and merge the external `izyploy-examples` pull request.
   - [x] Prepare a clean local workspace for the example repository.
   - [x] Select `php` as the first application build context.

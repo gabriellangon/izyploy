@@ -155,12 +155,13 @@ Create one when a milestone introduces application code, infrastructure, or a si
 
 ## Open decisions
 
-No technical decision is currently open for milestone 1.
+No technical decision is currently open.
 
 ## Current state
 
-- Completed milestone: milestone 0 — project framing.
-- Current milestone: milestone 1 — manual Docker workflow.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow.
+- Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
+- Current milestone: none; milestone 2 has not started.
 - Current branch: `feat/milestone-1-docker-manual`.
 - Application code: not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
@@ -173,4 +174,4 @@ No technical decision is currently open for milestone 1.
 - Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
-- Next action: review the milestone 1 learning outcomes and obtain explicit user validation before marking the milestone complete.
+- Next action: merge `feat/milestone-1-docker-manual` into `main`, then create the milestone 2 branch only after its start is explicitly approved.
