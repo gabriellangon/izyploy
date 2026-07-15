@@ -1,0 +1,332 @@
+# Izyploy — Plan d'apprentissage et d'implémentation
+
+## 1. Manière de travailler
+
+Ce projet sera développé comme un parcours guidé, pas comme une livraison automatique complète.
+
+Pour chaque étape :
+
+1. nous définissons ensemble le résultat attendu ;
+2. les notions nécessaires sont expliquées avant le code ;
+3. nous réalisons une petite modification observable ;
+4. nous exécutons une vérification manuelle ou automatisée ;
+5. nous faisons un court bilan de ce qui a été appris ;
+6. nous nous arrêtons pour valider avant de passer à l'étape suivante.
+
+Le code d'une étape ne doit pas anticiper plusieurs étapes futures. Une solution simple et remplaçable est préférable tant que le concept courant n'est pas maîtrisé.
+
+## 2. Décisions proposées à valider
+
+Avant d'écrire le squelette applicatif, nous validerons ces choix :
+
+- Rust et Axum pour l'API ;
+- Docker CLI pour la première intégration, puis éventuellement l'API Docker avec `bollard` ;
+- SQLite avec SQLx pour la persistance locale du MVP ;
+- tâches Tokio en arrière-plan avant l'introduction d'une vraie file ;
+- ports dynamiques avant Traefik et les sous-domaines ;
+- exécution locale de l'API avant sa dockerisation ;
+- dépôts GitHub publics et de confiance uniquement.
+
+Ces choix sont conçus pour isoler les apprentissages. Ils ne sont pas encore des décisions irréversibles.
+
+## 3. Jalons
+
+### Jalon 0 — Cadrage
+
+Objectif : savoir précisément ce que nous construisons et ce que nous reportons.
+
+Travail :
+
+- relire `product-spec.md` ;
+- valider le vocabulaire, le périmètre et les critères de réussite ;
+- choisir les décisions techniques encore ouvertes ;
+- choisir ou créer un petit dépôt public de test.
+
+Validation : le MVP peut être expliqué en une phrase et son premier scénario peut être décrit sans ambiguïté.
+
+Point d'arrêt : aucune ligne de code applicatif avant cette validation.
+
+### Jalon 1 — Comprendre le parcours Docker manuellement
+
+Objectif : réaliser une fois à la main ce que la plateforme automatisera ensuite.
+
+Notions : contexte de build, image, conteneur, port interne, port hôte, nom, étiquette et nettoyage.
+
+Travail :
+
+- cloner le dépôt de test dans un dossier temporaire ;
+- construire son image ;
+- démarrer le conteneur avec un port publié ;
+- vérifier l'application dans le navigateur ;
+- consulter ses logs ;
+- arrêter et supprimer le conteneur et l'image.
+
+Livrable : une courte procédure reproductible dans la documentation.
+
+Validation : chaque commande et chaque ressource Docker créée sont comprises.
+
+Point d'arrêt : bilan avant d'automatiser ce flux en Rust.
+
+### Jalon 2 — Créer le squelette Rust
+
+Objectif : disposer d'une API minimale saine, sans Docker ni base de données.
+
+Notions : projet Cargo, runtime Tokio, route Axum, état partagé, sérialisation JSON et gestion d'erreur HTTP.
+
+Travail :
+
+- initialiser le projet Rust ;
+- ajouter `GET /health` ;
+- organiser les modules principaux ;
+- ajouter le logging applicatif ;
+- écrire un premier test HTTP.
+
+Livrable : une API qui démarre et répond avec un statut sain.
+
+Validation : compilation, tests et appel manuel de `/health`.
+
+Point d'arrêt : revue de la structure avant d'ajouter le métier.
+
+### Jalon 3 — Modéliser une application et persister son état
+
+Objectif : créer et consulter une application sans encore la déployer.
+
+Notions : modèle de domaine, validation des entrées, migrations SQLx et transitions d'état.
+
+Travail :
+
+- créer le modèle `Application` ;
+- créer la première migration SQLite ;
+- implémenter `POST /applications` ;
+- implémenter les routes de lecture ;
+- valider l'URL, la branche et le port ;
+- tester les entrées valides et invalides.
+
+Livrable : une application créée avec l'état `queued` survit au redémarrage de l'API.
+
+Validation : tests API et inspection de la base locale.
+
+Point d'arrêt : revue du modèle et des statuts.
+
+### Jalon 4 — Cloner un dépôt en tâche de fond
+
+Objectif : déclencher un travail long sans bloquer la requête HTTP.
+
+Notions : tâche Tokio, cycle de vie asynchrone, dossier temporaire, capture de sortie et propagation d'erreur.
+
+Travail :
+
+- lancer une tâche après la création ;
+- passer de `queued` à `cloning` ;
+- cloner le dépôt dans un espace dédié ;
+- vérifier le `Dockerfile` ;
+- enregistrer les logs ;
+- passer à `failed` avec une erreur utile en cas d'échec.
+
+Livrable : l'API répond rapidement pendant que le clone se poursuit.
+
+Validation : tester un dépôt valide, une URL invalide et un dépôt sans `Dockerfile`.
+
+Point d'arrêt : expliquer les limites d'une tâche en mémoire avant de continuer.
+
+### Jalon 5 — Construire l'image Docker
+
+Objectif : transformer le dépôt cloné en image gérée par Izyploy.
+
+Notions : build context, tags, cache, flux de logs, code de sortie et nettoyage en cas d'échec.
+
+Travail :
+
+- générer un tag interne sûr ;
+- exécuter le build sans passer par un shell ;
+- faire évoluer l'état vers `building` ;
+- diffuser ou stocker les logs du build ;
+- identifier l'image avec des labels Izyploy.
+
+Livrable : une image Docker identifiable est créée depuis l'API.
+
+Validation : vérifier l'image et provoquer volontairement un build en erreur.
+
+Point d'arrêt : revue des risques liés à un `Dockerfile` non fiable.
+
+### Jalon 6 — Démarrer et exposer l'application
+
+Objectif : obtenir le premier parcours vertical complet.
+
+Notions : réseau Docker, publication de port, limites de ressources, variables d'environnement et état du conteneur.
+
+Travail :
+
+- démarrer un conteneur nommé par Izyploy ;
+- publier automatiquement le port interne demandé ;
+- appliquer des limites CPU, mémoire et processus ;
+- fournir `PORT` à l'application ;
+- récupérer le port hôte et construire l'URL ;
+- passer à `running`.
+
+Livrable : le dépôt soumis devient une application ouvrable dans le navigateur.
+
+Validation : appel HTTP réel et inspection du conteneur.
+
+Point d'arrêt : démonstration du MVP vertical avant toute interface web.
+
+### Jalon 7 — Logs, suppression et récupération après erreur
+
+Objectif : gérer le cycle de vie minimal proprement.
+
+Notions : idempotence, nettoyage, ressources orphelines et cohérence entre Docker et la base.
+
+Travail :
+
+- exposer les logs de déploiement et d'exécution ;
+- implémenter la suppression ;
+- supprimer le conteneur, l'image et le dossier de travail ;
+- traiter les ressources déjà absentes ;
+- définir le comportement après redémarrage d'Izyploy.
+
+Livrable : un déploiement peut être diagnostiqué puis entièrement supprimé.
+
+Validation : répéter création et suppression plusieurs fois sans laisser de ressources orphelines.
+
+Point d'arrêt : déclarer ou non le moteur MVP terminé.
+
+### Jalon 8 — Dockeriser Izyploy
+
+Objectif : exécuter la plateforme dans un conteneur qui pilote le Docker de l'hôte.
+
+Notions : Docker-outside-of-Docker, socket Docker, volumes, utilisateur et surface de privilège.
+
+Travail :
+
+- créer le `Dockerfile` d'Izyploy ;
+- créer un fichier Compose ;
+- monter le socket Docker et les données persistantes ;
+- vérifier que les applications sont des conteneurs frères ;
+- documenter le risque administratif du socket.
+
+Livrable : Izyploy et les applications déployées fonctionnent sur le même hôte Docker.
+
+Validation : refaire le scénario complet depuis la version conteneurisée.
+
+Point d'arrêt : revue d'architecture avant le reverse proxy.
+
+### Jalon 9 — Ajouter une interface minimale
+
+Objectif : rendre la démonstration visuelle sans construire un frontend complexe.
+
+Travail :
+
+- formulaire de création ;
+- liste et statut des applications ;
+- affichage des logs ;
+- bouton d'ouverture ;
+- bouton de suppression.
+
+Livrable : le scénario principal est réalisable depuis un navigateur.
+
+Validation : une personne découvrant le projet peut déployer le dépôt de test sans utiliser de client HTTP.
+
+Point d'arrêt : fin du premier MVP utilisateur.
+
+## 4. Jalons post-MVP
+
+### Jalon 10 — Traefik et sous-domaines
+
+Remplacer les ports visibles par des routes comme `mon-app.localhost`, puis `mon-app.apps.example.com`.
+
+Apprentissages : reverse proxy, réseau partagé, labels Traefik, DNS wildcard et certificats.
+
+### Jalon 11 — Déploiement sur VPS
+
+Installer la plateforme sur une machine distante, configurer le domaine, HTTPS, pare-feu, sauvegardes et redémarrage automatique.
+
+### Jalon 12 — Redéploiement et webhooks
+
+Recevoir un événement GitHub, reconstruire une nouvelle version, effectuer un health check puis basculer le trafic.
+
+### Jalon 13 — Observabilité et durcissement
+
+Ajouter métriques, tableaux de bord, alertes, quotas, scan d'images, politiques réseau et audit des opérations.
+
+### Jalon 14 — File et workers distribués
+
+Introduire PostgreSQL si nécessaire, Redis ou une file dédiée, reprise des travaux, concurrence contrôlée et plusieurs workers.
+
+Ce jalon constitue une refonte interne importante, mais le moteur qui lance les applications reste Docker. Il ne remplace donc pas encore la version Docker du produit.
+
+### Jalon 15 — Kubernetes
+
+Conserver le clone et le build, pousser l'image dans un registre, puis remplacer le démarrage Docker par la création de ressources Kubernetes :
+
+```text
+Deployment + Service + Ingress + ConfigMap + Secret
+```
+
+Apprentissages : état désiré, contrôleurs, RBAC, namespaces, requests/limits, probes, rolling updates et autoscaling.
+
+Ce jalon est la rupture architecturale principale du projet : le socket Docker, le démarrage direct des conteneurs et leur exposition par ports ou labels Traefik sont remplacés par l'API et les ressources Kubernetes. Il doit commencer sur une branche dédiée à partir de la dernière version Docker stable.
+
+## 5. Proposition pour la première journée
+
+Le but d'une première journée n'est pas de finir tous les jalons.
+
+### Matin
+
+- valider le jalon 0 ;
+- exécuter et documenter le jalon 1 ;
+- commencer le jalon 2.
+
+### Après-midi
+
+- terminer le jalon 2 ;
+- réaliser le jalon 3 ;
+- si le rythme d'apprentissage le permet, commencer le clone asynchrone du jalon 4.
+
+Résultat réaliste : une API bien comprise qui accepte et persiste une demande de déploiement, plus un parcours Docker réalisé manuellement. Le premier déploiement entièrement automatisé peut arriver lors de la session suivante sans précipiter les notions.
+
+## 6. Règle de progression
+
+Un jalon est terminé seulement lorsque :
+
+- le comportement fonctionne ;
+- les tests pertinents passent ;
+- nous savons expliquer les composants ajoutés ;
+- la documentation reflète l'état réel ;
+- les limites connues sont écrites ;
+- le prochain jalon a été explicitement validé.
+
+## 7. Stratégie Git
+
+La branche `main` contient toujours la dernière version stable et démontrable.
+
+Pour les jalons ordinaires, nous utilisons des branches courtes :
+
+```text
+feat/jalon-2-api
+feat/jalon-3-persistence
+feat/jalon-4-git-clone
+```
+
+Chaque branche est relue et testée avant d'être fusionnée dans `main`. Les commits restent petits et correspondent autant que possible à une notion apprise.
+
+À la fin des grandes versions, nous conservons un repère immuable avec un tag :
+
+```text
+v0.1.0-docker-mvp
+v0.2.0-traefik
+v0.3.0-vps
+```
+
+Avant le jalon 15, nous créons également une branche longue `docker` depuis la dernière version Docker stable. Elle conserve un point de départ visible et éventuellement maintenable.
+
+Le travail Kubernetes commence ensuite sur une branche séparée :
+
+```text
+main / docker
+      ↓
+feat/kubernetes-runtime
+```
+
+La branche et le tag Docker garantissent que cette version reste facile à consulter, lancer et comparer. La migration Kubernetes ne doit pas réécrire l'historique Git.
+
+Si l'architecture le permet, nous conserverons aussi les deux moteurs derrière une abstraction commune, par exemple `DockerRuntime` et `KubernetesRuntime`. Ce choix sera étudié à la fin du jalon 14 ; il ne sera pas introduit prématurément dans le MVP.
