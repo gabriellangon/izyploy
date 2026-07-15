@@ -22,6 +22,14 @@ Treat these files as project context, not optional documentation.
 - Do not implement future milestones preemptively.
 - Do not complete the project as a large autonomous batch.
 
+## Roadmap tracking
+
+- Treat the `Roadmap status` section at the top of `spec/implementation-plan.md` as the source of truth for progress.
+- Update its date, active milestone, checkboxes, and immediate subtasks in the same change that alters project progress.
+- Keep at most one milestone marked as in progress.
+- Mark a milestone complete only after its validation criteria are satisfied and the user explicitly accepts it.
+- Never infer completion only from code being written or committed.
+
 ## Project memory
 
 - Update `knowledge.md` whenever work introduces or changes a significant product, architecture, security, workflow, naming, or tooling decision.
@@ -44,4 +52,3 @@ Treat these files as project context, not optional documentation.
 - The current source of truth for scope is `spec/product-spec.md`.
 - The current source of truth for sequencing is `spec/implementation-plan.md`.
 - If implementation requires a decision that is not documented, stop at the decision boundary, discuss it with the user, then record the accepted choice in `knowledge.md`.
-

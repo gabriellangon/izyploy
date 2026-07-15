@@ -1,5 +1,41 @@
 # Izyploy — Plan d'apprentissage et d'implémentation
 
+## Roadmap status
+
+Last updated: 2026-07-15
+
+Current milestone: **Milestone 0 — Project framing (in progress)**
+
+Legend:
+
+- `[x]` completed and explicitly validated;
+- `[ ]` not completed;
+- **In progress** identifies the only milestone currently active.
+
+- [ ] **Milestone 0 — Project framing** — **In progress**
+  - [x] Define and validate the product scope.
+  - [x] Define the implementation roadmap.
+  - [x] Define the Git and project-knowledge conventions.
+  - [ ] Validate the technical choices needed before application code.
+  - [ ] Select or create the trusted public test repository.
+- [ ] **Milestone 1 — Manual Docker workflow**
+- [ ] **Milestone 2 — Rust API skeleton**
+- [ ] **Milestone 3 — Application model and persistence**
+- [ ] **Milestone 4 — Background Git clone**
+- [ ] **Milestone 5 — Docker image build**
+- [ ] **Milestone 6 — Application start and exposure**
+- [ ] **Milestone 7 — Logs, deletion, and recovery**
+- [ ] **Milestone 8 — Containerize Izyploy**
+- [ ] **Milestone 9 — Minimal web interface**
+- [ ] **Milestone 10 — Traefik and subdomains**
+- [ ] **Milestone 11 — VPS deployment**
+- [ ] **Milestone 12 — Redeployment and GitHub webhooks**
+- [ ] **Milestone 13 — Observability and hardening**
+- [ ] **Milestone 14 — Distributed queue and workers**
+- [ ] **Milestone 15 — Kubernetes runtime**
+
+This section is the immediate source of truth for project progress. It must be updated in the same commit that starts or completes a milestone. A milestone can be checked only after its validation criteria have been met and the user has explicitly accepted the result.
+
 ## 1. Manière de travailler
 
 Ce projet sera développé comme un parcours guidé, pas comme une livraison automatique complète.
@@ -29,9 +65,9 @@ Avant d'écrire le squelette applicatif, nous validerons ces choix :
 
 Ces choix sont conçus pour isoler les apprentissages. Ils ne sont pas encore des décisions irréversibles.
 
-## 3. Jalons
+## 3. Milestones
 
-### Jalon 0 — Cadrage
+### Milestone 0 — Cadrage
 
 Objectif : savoir précisément ce que nous construisons et ce que nous reportons.
 
@@ -46,7 +82,7 @@ Validation : le MVP peut être expliqué en une phrase et son premier scénario 
 
 Point d'arrêt : aucune ligne de code applicatif avant cette validation.
 
-### Jalon 1 — Comprendre le parcours Docker manuellement
+### Milestone 1 — Comprendre le parcours Docker manuellement
 
 Objectif : réaliser une fois à la main ce que la plateforme automatisera ensuite.
 
@@ -67,7 +103,7 @@ Validation : chaque commande et chaque ressource Docker créée sont comprises.
 
 Point d'arrêt : bilan avant d'automatiser ce flux en Rust.
 
-### Jalon 2 — Créer le squelette Rust
+### Milestone 2 — Créer le squelette Rust
 
 Objectif : disposer d'une API minimale saine, sans Docker ni base de données.
 
@@ -87,7 +123,7 @@ Validation : compilation, tests et appel manuel de `/health`.
 
 Point d'arrêt : revue de la structure avant d'ajouter le métier.
 
-### Jalon 3 — Modéliser une application et persister son état
+### Milestone 3 — Modéliser une application et persister son état
 
 Objectif : créer et consulter une application sans encore la déployer.
 
@@ -108,7 +144,7 @@ Validation : tests API et inspection de la base locale.
 
 Point d'arrêt : revue du modèle et des statuts.
 
-### Jalon 4 — Cloner un dépôt en tâche de fond
+### Milestone 4 — Cloner un dépôt en tâche de fond
 
 Objectif : déclencher un travail long sans bloquer la requête HTTP.
 
@@ -129,7 +165,7 @@ Validation : tester un dépôt valide, une URL invalide et un dépôt sans `Dock
 
 Point d'arrêt : expliquer les limites d'une tâche en mémoire avant de continuer.
 
-### Jalon 5 — Construire l'image Docker
+### Milestone 5 — Construire l'image Docker
 
 Objectif : transformer le dépôt cloné en image gérée par Izyploy.
 
@@ -149,7 +185,7 @@ Validation : vérifier l'image et provoquer volontairement un build en erreur.
 
 Point d'arrêt : revue des risques liés à un `Dockerfile` non fiable.
 
-### Jalon 6 — Démarrer et exposer l'application
+### Milestone 6 — Démarrer et exposer l'application
 
 Objectif : obtenir le premier parcours vertical complet.
 
@@ -170,7 +206,7 @@ Validation : appel HTTP réel et inspection du conteneur.
 
 Point d'arrêt : démonstration du MVP vertical avant toute interface web.
 
-### Jalon 7 — Logs, suppression et récupération après erreur
+### Milestone 7 — Logs, suppression et récupération après erreur
 
 Objectif : gérer le cycle de vie minimal proprement.
 
@@ -190,7 +226,7 @@ Validation : répéter création et suppression plusieurs fois sans laisser de r
 
 Point d'arrêt : déclarer ou non le moteur MVP terminé.
 
-### Jalon 8 — Dockeriser Izyploy
+### Milestone 8 — Dockeriser Izyploy
 
 Objectif : exécuter la plateforme dans un conteneur qui pilote le Docker de l'hôte.
 
@@ -210,7 +246,7 @@ Validation : refaire le scénario complet depuis la version conteneurisée.
 
 Point d'arrêt : revue d'architecture avant le reverse proxy.
 
-### Jalon 9 — Ajouter une interface minimale
+### Milestone 9 — Ajouter une interface minimale
 
 Objectif : rendre la démonstration visuelle sans construire un frontend complexe.
 
@@ -228,33 +264,33 @@ Validation : une personne découvrant le projet peut déployer le dépôt de tes
 
 Point d'arrêt : fin du premier MVP utilisateur.
 
-## 4. Jalons post-MVP
+## 4. Milestones post-MVP
 
-### Jalon 10 — Traefik et sous-domaines
+### Milestone 10 — Traefik et sous-domaines
 
 Remplacer les ports visibles par des routes comme `mon-app.localhost`, puis `mon-app.apps.example.com`.
 
 Apprentissages : reverse proxy, réseau partagé, labels Traefik, DNS wildcard et certificats.
 
-### Jalon 11 — Déploiement sur VPS
+### Milestone 11 — Déploiement sur VPS
 
 Installer la plateforme sur une machine distante, configurer le domaine, HTTPS, pare-feu, sauvegardes et redémarrage automatique.
 
-### Jalon 12 — Redéploiement et webhooks
+### Milestone 12 — Redéploiement et webhooks
 
 Recevoir un événement GitHub, reconstruire une nouvelle version, effectuer un health check puis basculer le trafic.
 
-### Jalon 13 — Observabilité et durcissement
+### Milestone 13 — Observabilité et durcissement
 
 Ajouter métriques, tableaux de bord, alertes, quotas, scan d'images, politiques réseau et audit des opérations.
 
-### Jalon 14 — File et workers distribués
+### Milestone 14 — File et workers distribués
 
 Introduire PostgreSQL si nécessaire, Redis ou une file dédiée, reprise des travaux, concurrence contrôlée et plusieurs workers.
 
-Ce jalon constitue une refonte interne importante, mais le moteur qui lance les applications reste Docker. Il ne remplace donc pas encore la version Docker du produit.
+Ce milestone constitue une refonte interne importante, mais le moteur qui lance les applications reste Docker. Il ne remplace donc pas encore la version Docker du produit.
 
-### Jalon 15 — Kubernetes
+### Milestone 15 — Kubernetes
 
 Conserver le clone et le build, pousser l'image dans un registre, puis remplacer le démarrage Docker par la création de ressources Kubernetes :
 
@@ -264,42 +300,42 @@ Deployment + Service + Ingress + ConfigMap + Secret
 
 Apprentissages : état désiré, contrôleurs, RBAC, namespaces, requests/limits, probes, rolling updates et autoscaling.
 
-Ce jalon est la rupture architecturale principale du projet : le socket Docker, le démarrage direct des conteneurs et leur exposition par ports ou labels Traefik sont remplacés par l'API et les ressources Kubernetes. Il doit commencer sur une branche dédiée à partir de la dernière version Docker stable.
+Ce milestone est la rupture architecturale principale du projet : le socket Docker, le démarrage direct des conteneurs et leur exposition par ports ou labels Traefik sont remplacés par l'API et les ressources Kubernetes. Il doit commencer sur une branche dédiée à partir de la dernière version Docker stable.
 
 ## 5. Proposition pour la première journée
 
-Le but d'une première journée n'est pas de finir tous les jalons.
+Le but d'une première journée n'est pas de finir tous les milestones.
 
 ### Matin
 
-- valider le jalon 0 ;
-- exécuter et documenter le jalon 1 ;
-- commencer le jalon 2.
+- valider le milestone 0 ;
+- exécuter et documenter le milestone 1 ;
+- commencer le milestone 2.
 
 ### Après-midi
 
-- terminer le jalon 2 ;
-- réaliser le jalon 3 ;
-- si le rythme d'apprentissage le permet, commencer le clone asynchrone du jalon 4.
+- terminer le milestone 2 ;
+- réaliser le milestone 3 ;
+- si le rythme d'apprentissage le permet, commencer le clone asynchrone du milestone 4.
 
 Résultat réaliste : une API bien comprise qui accepte et persiste une demande de déploiement, plus un parcours Docker réalisé manuellement. Le premier déploiement entièrement automatisé peut arriver lors de la session suivante sans précipiter les notions.
 
 ## 6. Règle de progression
 
-Un jalon est terminé seulement lorsque :
+Un milestone est terminé seulement lorsque :
 
 - le comportement fonctionne ;
 - les tests pertinents passent ;
 - nous savons expliquer les composants ajoutés ;
 - la documentation reflète l'état réel ;
 - les limites connues sont écrites ;
-- le prochain jalon a été explicitement validé.
+- le prochain milestone a été explicitement validé.
 
 ## 7. Stratégie Git
 
 La branche `main` contient toujours la dernière version stable et démontrable.
 
-Pour les jalons ordinaires, nous utilisons des branches courtes :
+Pour les milestones ordinaires, nous utilisons des branches courtes :
 
 ```text
 feat/milestone-2-api
@@ -317,7 +353,7 @@ v0.2.0-traefik
 v0.3.0-vps
 ```
 
-Avant le jalon 15, nous créons également une branche longue `docker` depuis la dernière version Docker stable. Elle conserve un point de départ visible et éventuellement maintenable.
+Avant le milestone 15, nous créons également une branche longue `docker` depuis la dernière version Docker stable. Elle conserve un point de départ visible et éventuellement maintenable.
 
 Le travail Kubernetes commence ensuite sur une branche séparée :
 
@@ -329,6 +365,6 @@ feat/milestone-15-kubernetes-runtime
 
 La branche et le tag Docker garantissent que cette version reste facile à consulter, lancer et comparer. La migration Kubernetes ne doit pas réécrire l'historique Git.
 
-Si l'architecture le permet, nous conserverons aussi les deux moteurs derrière une abstraction commune, par exemple `DockerRuntime` et `KubernetesRuntime`. Ce choix sera étudié à la fin du jalon 14 ; il ne sera pas introduit prématurément dans le MVP.
+Si l'architecture le permet, nous conserverons aussi les deux moteurs derrière une abstraction commune, par exemple `DockerRuntime` et `KubernetesRuntime`. Ce choix sera étudié à la fin du milestone 14 ; il ne sera pas introduit prématurément dans le MVP.
 
-Les décisions durables, leurs raisons et les conventions communes sont consignées dans `knowledge.md`. Ce fichier doit être relu au début de chaque jalon et mis à jour dès qu'une décision significative est validée.
+Les décisions durables, leurs raisons et les conventions communes sont consignées dans `knowledge.md`. Ce fichier doit être relu au début de chaque milestone et mis à jour dès qu'une décision significative est validée.

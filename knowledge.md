@@ -100,6 +100,13 @@ refactor: extract deployment runtime interface
 - Decision: all technical nomenclature and Git metadata use English.
 - Reason: this matches common professional conventions and keeps the repository consistent for an international audience.
 
+### D-007 — Roadmap tracking
+
+- Date: 2026-07-15
+- Status: accepted
+- Decision: the `Roadmap status` section at the top of `spec/implementation-plan.md` is the source of truth for completed, active, and pending work. Only one milestone may be active, and completion requires explicit user validation.
+- Reason: the detailed plan explains the work but did not provide an immediate view of progress or remaining work.
+
 ## Open decisions
 
 The following proposals must be validated at the relevant milestone before becoming accepted decisions:
@@ -112,8 +119,8 @@ The following proposals must be validated at the relevant milestone before becom
 
 ## Current state
 
-- Current milestone: milestone 1 — manual Docker workflow.
+- Current milestone: milestone 0 — project framing.
 - Current branch: `feat/milestone-1-docker-manual`.
 - Application code: not started.
-- Next action: select or create a trusted public test repository, then execute the complete Docker workflow manually.
-
+- Prepared next milestone: milestone 1 — manual Docker workflow.
+- Next action: validate the initial technical choices and select or create a trusted public test repository.
