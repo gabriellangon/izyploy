@@ -25,7 +25,7 @@ Legend:
   - [x] Build its Docker image manually.
   - [x] Start its container with a published host port.
   - [x] Verify `/` and `/health` from the host.
-  - [ ] Inspect the container logs and metadata.
+  - [x] Inspect the container logs and metadata.
   - [ ] Stop and remove the container and image.
   - [ ] Document the complete manual workflow.
 - [ ] **Milestone 2 — Rust API skeleton**
