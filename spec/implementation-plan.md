@@ -20,7 +20,7 @@ Legend:
   - [x] Select the structure and name of the trusted public test repository.
 - [ ] **Milestone 1 — Manual Docker workflow** — **In progress**
   - [x] Validate and merge the external `izyploy-examples` pull request.
-  - [ ] Clone the example repository into a temporary workspace.
+  - [x] Prepare a clean local workspace for the example repository.
   - [ ] Select one application subdirectory as the build context.
   - [ ] Build its Docker image manually.
   - [ ] Start its container with a published host port.

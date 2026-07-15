@@ -145,4 +145,5 @@ No technical decision is currently open for milestone 1. The first application b
 - Application code: not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
-- Next action: clone `izyploy-examples` into a temporary workspace, then select the first application build context together.
+- Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
+- Next action: select the first application build context together.
