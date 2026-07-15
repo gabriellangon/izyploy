@@ -55,6 +55,12 @@ fix: remove orphaned container after failed deployment
 refactor: extract deployment runtime interface
 ```
 
+### Milestone learning documents
+
+Store milestone learning documents under `docs/milestones/` and name them `milestone-<zero-padded-number>-<english-topic>.md`.
+
+Create one when a milestone introduces application code, infrastructure, or a significant concept that benefits from a reproducible explanation. The document should capture the relevant objective, concepts, implementation, verification, known limits, and learning outcomes without duplicating roadmap status or the decision log.
+
 ## Decision log
 
 ### D-001 — Product direction
@@ -133,6 +139,13 @@ refactor: extract deployment runtime interface
   - the context must exist and contain a regular root `Dockerfile`.
 - Example repository: `izyploy-examples`, with `java`, `php`, `python`, and `rust` contexts.
 
+### D-010 — Milestone learning documentation
+
+- Date: 2026-07-16
+- Status: accepted
+- Decision: relevant milestones receive a learning document under `docs/milestones/`, named `milestone-<zero-padded-number>-<english-topic>.md` and referenced from their detailed implementation-plan section.
+- Reason: milestone-specific documents preserve reproducible workflows and learning summaries while keeping the roadmap focused on progress and `knowledge.md` focused on durable decisions.
+
 ## Open decisions
 
 No technical decision is currently open for milestone 1.
@@ -152,5 +165,5 @@ No technical decision is currently open for milestone 1.
 - Manual HTTP verification: `/` returns the PHP Hello World payload and `/health` returns `{"status":"ok"}` through `http://127.0.0.1:8080`.
 - Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
-- Manual workflow documentation: `docs/manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
+- Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Next action: review the milestone 1 learning outcomes and obtain explicit user validation before marking the milestone complete.

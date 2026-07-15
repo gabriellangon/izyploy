@@ -1,4 +1,4 @@
-# Manual Docker workflow
+# Milestone 01 — Manual Docker workflow
 
 This guide reproduces manually the Docker lifecycle that Izyploy will automate later. It uses the trusted PHP application from `izyploy-examples` and binds the application only to the local machine.
 

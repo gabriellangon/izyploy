@@ -37,6 +37,15 @@ Treat these files as project context, not optional documentation.
 - Preserve superseded decisions instead of silently rewriting history.
 - Do not add routine activity logs to `knowledge.md`.
 
+## Milestone learning documents
+
+- Create a learning document when a milestone introduces application code, infrastructure, or a significant concept that benefits from a reproducible explanation.
+- Store these documents under `docs/milestones/`.
+- Name them `milestone-<zero-padded-number>-<english-topic>.md`, for example `milestone-02-rust-api-skeleton.md`.
+- Summarize the objective, concepts, implementation, verification, known limits, and key learning outcomes when those sections are relevant.
+- Reference each document from the corresponding detailed milestone in `spec/implementation-plan.md`.
+- Do not duplicate roadmap status or durable architectural decisions in these documents.
+
 ## Naming and Git
 
 - Use English for branch names, commit messages, code identifiers, application filenames, APIs, database objects, and infrastructure resources.

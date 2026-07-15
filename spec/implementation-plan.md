@@ -2,7 +2,7 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 Current milestone: **Milestone 1 — Manual Docker workflow (in progress)**
 
@@ -110,7 +110,7 @@ Travail :
 - consulter ses logs ;
 - arrêter et supprimer le conteneur et l'image.
 
-Livrable : une courte procédure reproductible dans la documentation.
+Livrable : une courte procédure reproductible dans [`docs/milestones/milestone-01-manual-docker-workflow.md`](../docs/milestones/milestone-01-manual-docker-workflow.md).
 
 Validation : chaque commande et chaque ressource Docker créée sont comprises.
 
