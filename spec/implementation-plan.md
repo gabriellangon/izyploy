@@ -2,9 +2,9 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
-Current milestone: **Milestone 0 — Project framing (completed)**
+Current milestone: **None — Milestone 1 completed; Milestone 2 not started**
 
 Legend:
 
@@ -18,7 +18,16 @@ Legend:
   - [x] Define the Git and project-knowledge conventions.
   - [x] Validate the technical choices needed before application code.
   - [x] Select the structure and name of the trusted public test repository.
-- [ ] **Milestone 1 — Manual Docker workflow**
+- [x] **Milestone 1 — Manual Docker workflow**
+  - [x] Validate and merge the external `izyploy-examples` pull request.
+  - [x] Prepare a clean local workspace for the example repository.
+  - [x] Select `php` as the first application build context.
+  - [x] Build its Docker image manually.
+  - [x] Start its container with a published host port.
+  - [x] Verify `/` and `/health` from the host.
+  - [x] Inspect the container logs and metadata.
+  - [x] Stop and remove the container and image.
+  - [x] Document the complete manual workflow.
 - [ ] **Milestone 2 — Rust API skeleton**
 - [ ] **Milestone 3 — Application model and persistence**
 - [ ] **Milestone 4 — Background Git clone**
@@ -101,7 +110,7 @@ Travail :
 - consulter ses logs ;
 - arrêter et supprimer le conteneur et l'image.
 
-Livrable : une courte procédure reproductible dans la documentation.
+Livrable : une courte procédure reproductible dans [`docs/milestones/milestone-01-manual-docker-workflow.md`](../docs/milestones/milestone-01-manual-docker-workflow.md).
 
 Validation : chaque commande et chaque ressource Docker créée sont comprises.
 

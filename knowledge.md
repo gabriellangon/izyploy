@@ -55,6 +55,12 @@ fix: remove orphaned container after failed deployment
 refactor: extract deployment runtime interface
 ```
 
+### Milestone learning documents
+
+Store milestone learning documents under `docs/milestones/` and name them `milestone-<zero-padded-number>-<english-topic>.md`.
+
+Create one when a milestone introduces application code, infrastructure, or a significant concept that benefits from a reproducible explanation. The document should capture the relevant objective, concepts, implementation, verification, known limits, and learning outcomes without duplicating roadmap status or the decision log.
+
 ## Decision log
 
 ### D-001 — Product direction
@@ -133,15 +139,39 @@ refactor: extract deployment runtime interface
   - the context must exist and contain a regular root `Dockerfile`.
 - Example repository: `izyploy-examples`, with `java`, `php`, `python`, and `rust` contexts.
 
+### D-010 — Milestone learning documentation
+
+- Date: 2026-07-16
+- Status: accepted
+- Decision: relevant milestones receive a learning document under `docs/milestones/`, named `milestone-<zero-padded-number>-<english-topic>.md` and referenced from their detailed implementation-plan section.
+- Reason: milestone-specific documents preserve reproducible workflows and learning summaries while keeping the roadmap focused on progress and `knowledge.md` focused on durable decisions.
+
+### D-011 — User-facing command portability
+
+- Date: 2026-07-16
+- Status: accepted
+- Decision: user-facing documentation and examples use standard project commands without the internal `rtk` or `rtk proxy` prefixes. Agents continue to use RTK only while executing shell commands internally.
+- Reason: RTK protects agent context but is not an Izyploy dependency; documented commands must remain portable for users and contributors.
+
 ## Open decisions
 
-No technical decision remains open from milestone 0. The `izyploy-examples` repository has been selected and its implementation is available in an external pull request for milestone 1 validation.
+No technical decision is currently open.
 
 ## Current state
 
-- Completed milestone: milestone 0 — project framing.
-- Current branch: `feat/milestone-0-project-framing`.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow.
+- Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
+- Current milestone: none; milestone 2 has not started.
+- Current branch: `feat/milestone-1-docker-manual`.
 - Application code: not started.
-- Prepared next milestone: milestone 1 — manual Docker workflow.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
-- Next action: merge milestone 0 into `main`, then create the milestone 1 branch.
+- Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
+- Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
+- First manual build context: `php`, resolved locally as `/Users/gabriel.maomy/Projects/izyploy-examples/php`.
+- Manual Docker image: `izyploy-example-php:milestone-1`, built from the `php` context and verified with internal port `8080/tcp` and runtime user `app`.
+- Manual Docker container: `izyploy-php-manual`, running from the PHP image with `127.0.0.1:8080` published to its internal port `8080/tcp`.
+- Manual HTTP verification: `/` returns the PHP Hello World payload and `/health` returns `{"status":"ok"}` through `http://127.0.0.1:8080`.
+- Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
+- Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
+- Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
+- Next action: merge `feat/milestone-1-docker-manual` into `main`, then create the milestone 2 branch only after its start is explicitly approved.
