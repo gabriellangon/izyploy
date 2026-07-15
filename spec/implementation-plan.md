@@ -302,9 +302,9 @@ La branche `main` contient toujours la dernière version stable et démontrable.
 Pour les jalons ordinaires, nous utilisons des branches courtes :
 
 ```text
-feat/jalon-2-api
-feat/jalon-3-persistence
-feat/jalon-4-git-clone
+feat/milestone-2-api
+feat/milestone-3-persistence
+feat/milestone-4-git-clone
 ```
 
 Chaque branche est relue et testée avant d'être fusionnée dans `main`. Les commits restent petits et correspondent autant que possible à une notion apprise.
@@ -324,9 +324,11 @@ Le travail Kubernetes commence ensuite sur une branche séparée :
 ```text
 main / docker
       ↓
-feat/kubernetes-runtime
+feat/milestone-15-kubernetes-runtime
 ```
 
 La branche et le tag Docker garantissent que cette version reste facile à consulter, lancer et comparer. La migration Kubernetes ne doit pas réécrire l'historique Git.
 
 Si l'architecture le permet, nous conserverons aussi les deux moteurs derrière une abstraction commune, par exemple `DockerRuntime` et `KubernetesRuntime`. Ce choix sera étudié à la fin du jalon 14 ; il ne sera pas introduit prématurément dans le MVP.
+
+Les décisions durables, leurs raisons et les conventions communes sont consignées dans `knowledge.md`. Ce fichier doit être relu au début de chaque jalon et mis à jour dès qu'une décision significative est validée.
