@@ -2,9 +2,9 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-16
+Last updated: 2026-07-21
 
-Current milestone: **None — Milestone 1 completed; Milestone 2 not started**
+Current milestone: **None — Milestone 2 completed; Milestone 3 not started**
 
 Legend:
 
@@ -28,7 +28,13 @@ Legend:
   - [x] Inspect the container logs and metadata.
   - [x] Stop and remove the container and image.
   - [x] Document the complete manual workflow.
-- [ ] **Milestone 2 — Rust API skeleton**
+- [x] **Milestone 2 — Rust API skeleton**
+  - [x] Initialize the Rust project.
+  - [x] Add `GET /health`.
+  - [x] Organize the initial modules and shared state.
+  - [x] Add application and HTTP request logging.
+  - [x] Add the first HTTP test.
+  - [x] Document and verify the milestone.
 - [ ] **Milestone 3 — Application model and persistence**
 - [ ] **Milestone 4 — Background Git clone**
 - [ ] **Milestone 5 — Docker image build**
@@ -130,7 +136,7 @@ Travail :
 - ajouter le logging applicatif ;
 - écrire un premier test HTTP.
 
-Livrable : une API qui démarre et répond avec un statut sain.
+Livrable : une API qui démarre et répond avec un statut sain, accompagnée du document d'apprentissage [`docs/milestones/milestone-02-rust-api-skeleton.md`](../docs/milestones/milestone-02-rust-api-skeleton.md).
 
 Validation : compilation, tests et appel manuel de `/health`.
 

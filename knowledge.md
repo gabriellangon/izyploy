@@ -159,11 +159,12 @@ No technical decision is currently open.
 
 ## Current state
 
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow.
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Current milestone: none; milestone 2 has not started.
-- Current branch: `feat/milestone-1-docker-manual`.
-- Application code: not started.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton.
+- Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
+- Current milestone: none; milestone 3 has not started.
+- Current branch: `main` after the milestone 2 integration.
+- Application code: the initial Rust and Axum API skeleton, local `GET /health` route, request logging, and in-process HTTP test are implemented; persistence and Docker automation have not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -174,4 +175,5 @@ No technical decision is currently open.
 - Manual inspection: container logs show its startup and HTTP requests; metadata confirms the expected image, `running` state, `app` user, and port mapping. The manually created container has no Docker labels.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
-- Next action: merge `feat/milestone-1-docker-manual` into `main`, then create the milestone 2 branch only after its start is explicitly approved.
+- Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
+- Next action: present the milestone 3 persistence concepts and start it only after explicit user approval.
