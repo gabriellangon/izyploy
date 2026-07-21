@@ -153,18 +153,29 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Decision: user-facing documentation and examples use standard project commands without the internal `rtk` or `rtk proxy` prefixes. Agents continue to use RTK only while executing shell commands internally.
 - Reason: RTK protects agent context but is not an Izyploy dependency; documented commands must remain portable for users and contributors.
 
+### D-012 — Initial application persistence contract
+
+- Date: 2026-07-21
+- Status: proposed — pending milestone 3 validation
+- Decision: applications use UUID v4 identifiers, UTC timestamps, and a constrained textual deployment status. SQLite migrations run when the API starts, using `DATABASE_URL` or `sqlite://izyploy.db` by default. Creation accepts one HTTPS `github.com/<owner>/<repository>` URL, defaults the branch to `main` and the build context to `.`, and requires a container port from 1 through 65535. Application names are descriptive rather than unique; generated identifiers will distinguish managed resources.
+- Reason: explicit identifiers and timestamps make records stable across restarts, startup migrations keep the local schema reproducible, and validation rejects unsupported sources or path traversal before asynchronous deployment begins.
+- Constraints:
+  - build-context validation at this stage is syntactic; filesystem resolution and symlink confinement occur only after cloning in milestone 4;
+  - SQLite remains a single-host MVP store and will be reconsidered before distributed workers;
+  - only the `queued` transition is created in milestone 3, although the schema reserves the documented MVP statuses.
+
 ## Open decisions
 
-No technical decision is currently open.
+- Accept or revise D-012 during the milestone 3 review.
 
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
 - Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
-- Current milestone: none; milestone 3 has not started.
-- Current branch: `main` after the milestone 2 integration.
-- Application code: the initial Rust and Axum API skeleton, local `GET /health` route, request logging, and in-process HTTP test are implemented; persistence and Docker automation have not started.
+- Current milestone: milestone 3 — application model and persistence, started on 2026-07-21 and awaiting explicit user validation.
+- Current branch: `feat/milestone-3-persistence`.
+- Application code: application creation, validation, SQLite persistence, listing, and lookup are implemented with Axum and SQLx; Git and Docker automation have not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -176,4 +187,4 @@ No technical decision is currently open.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: present the milestone 3 persistence concepts and start it only after explicit user approval.
+- Next action: review D-012 and the milestone 3 persistence flow, then obtain explicit user validation before starting background Git work.

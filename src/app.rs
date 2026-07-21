@@ -8,11 +8,12 @@ use axum::{
     routing::get,
 };
 
-use crate::{AppState, routes::health::health};
+use crate::{AppState, applications::routes::router as application_routes, routes::health::health};
 
 pub fn app(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
+        .merge(application_routes())
         .layer(middleware::from_fn(log_request))
         .with_state(state)
 }

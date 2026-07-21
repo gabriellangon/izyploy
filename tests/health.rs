@@ -4,11 +4,15 @@ use axum::{
 };
 use izyploy::{AppState, app};
 use serde_json::{Value, json};
+use sqlx::sqlite::SqlitePoolOptions;
 use tower::ServiceExt;
 
 #[tokio::test]
 async fn health_returns_ok() {
-    let response = app(AppState)
+    let database = SqlitePoolOptions::new()
+        .connect_lazy("sqlite::memory:")
+        .expect("in-memory database URL should be valid");
+    let response = app(AppState::new(database))
         .oneshot(
             Request::builder()
                 .uri("/health")

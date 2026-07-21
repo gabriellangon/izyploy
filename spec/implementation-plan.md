@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-21
 
-Current milestone: **None — Milestone 2 completed; Milestone 3 not started**
+Current milestone: **Milestone 3 — Application model and persistence (in progress)**
 
 Legend:
 
@@ -35,7 +35,14 @@ Legend:
   - [x] Add application and HTTP request logging.
   - [x] Add the first HTTP test.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 3 — Application model and persistence**
+- [ ] **Milestone 3 — Application model and persistence** — **In progress**
+  - [x] Add the `Application` domain model and initial SQLite migration.
+  - [x] Initialize the SQLx pool and run migrations at startup.
+  - [x] Implement `POST /applications`.
+  - [x] Implement the application read routes.
+  - [x] Validate creation inputs.
+  - [x] Test valid, invalid, and persistent application data.
+  - [x] Document and verify the milestone.
 - [ ] **Milestone 4 — Background Git clone**
 - [ ] **Milestone 5 — Docker image build**
 - [ ] **Milestone 6 — Application start and exposure**
@@ -157,7 +164,7 @@ Travail :
 - valider l'URL, la branche, le contexte de build et le port ;
 - tester les entrées valides et invalides.
 
-Livrable : une application créée avec l'état `queued` survit au redémarrage de l'API.
+Livrable : une application créée avec l'état `queued` survit au redémarrage de l'API, accompagnée du document d'apprentissage [`docs/milestones/milestone-03-application-persistence.md`](../docs/milestones/milestone-03-application-persistence.md).
 
 Validation : tests API et inspection de la base locale.
 
