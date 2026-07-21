@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-21
 
-Current milestone: **Milestone 3 — Application model and persistence (in progress)**
+Current milestone: **None — Milestone 3 completed; Milestone 4 not started**
 
 Legend:
 
@@ -35,7 +35,7 @@ Legend:
   - [x] Add application and HTTP request logging.
   - [x] Add the first HTTP test.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 3 — Application model and persistence** — **In progress**
+- [x] **Milestone 3 — Application model and persistence**
   - [x] Add the `Application` domain model and initial SQLite migration.
   - [x] Initialize the SQLx pool and run migrations at startup.
   - [x] Implement `POST /applications`.

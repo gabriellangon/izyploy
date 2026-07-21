@@ -110,7 +110,7 @@ DELETE /applications/{id}
 
 The product specification and implementation roadmap are established. The complete Docker lifecycle has been verified manually with the PHP example application: image build, container start, port publication, HTTP checks, log and metadata inspection, and resource cleanup.
 
-Milestone 3 is in progress. The Rust and Axum API now validates, persists, lists, and retrieves application records through SQLite and SQLx. New applications begin in `queued`; automated repository cloning and Docker orchestration follow in later milestones.
+Milestone 3 is complete. The Rust and Axum API validates, persists, lists, and retrieves application records through SQLite and SQLx. New applications begin in `queued`; automated repository cloning and Docker orchestration follow in later milestones.
 
 ## Security boundary
 

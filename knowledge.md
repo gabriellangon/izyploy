@@ -156,7 +156,7 @@ Create one when a milestone introduces application code, infrastructure, or a si
 ### D-012 — Initial application persistence contract
 
 - Date: 2026-07-21
-- Status: proposed — pending milestone 3 validation
+- Status: accepted
 - Decision: applications use UUID v4 identifiers, UTC timestamps, and a constrained textual deployment status. SQLite migrations run when the API starts, using `DATABASE_URL` or `sqlite://izyploy.db` by default. Creation accepts one HTTPS `github.com/<owner>/<repository>` URL, defaults the branch to `main` and the build context to `.`, and requires a container port from 1 through 65535. Application names are descriptive rather than unique; generated identifiers will distinguish managed resources.
 - Reason: explicit identifiers and timestamps make records stable across restarts, startup migrations keep the local schema reproducible, and validation rejects unsupported sources or path traversal before asynchronous deployment begins.
 - Constraints:
@@ -170,18 +170,20 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Status: accepted
 - Decision: `src/app.rs` is the single HTTP composition root. Cohesive domain modules expose their own router, while operational endpoints such as health, readiness, or version information are grouped under `src/system/routes.rs`. A directory represents a capability, not an individual endpoint, and there is no generic top-level `routes` directory.
 - Reason: this keeps the complete router assembly easy to find, preserves feature ownership as the API grows, and avoids both a misleading global routes directory and one directory per small endpoint.
+- Constraint: a top-level `features/` namespace is intentionally deferred until multiple domain capabilities make that extra grouping useful; the current capability-oriented modules already provide the required boundaries.
 
 ## Open decisions
 
-- Accept or revise D-012 during the milestone 3 review.
+No technical decision is currently open.
 
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
-- Current milestone: milestone 3 — application model and persistence, started on 2026-07-21 and awaiting explicit user validation.
-- Current branch: `feat/milestone-3-persistence`.
+- Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
+- Current milestone: none; milestone 4 has not started.
+- Current branch: `main` after the milestone 3 integration.
 - Application code: application creation, validation, SQLite persistence, listing, and lookup are implemented with Axum and SQLx; Git and Docker automation have not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -194,4 +196,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: review D-012 and the milestone 3 persistence flow, then obtain explicit user validation before starting background Git work.
+- Next action: present the milestone 4 background Git concepts and start it only after explicit user approval.
