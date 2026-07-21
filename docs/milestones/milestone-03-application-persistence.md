@@ -79,6 +79,8 @@ This build-context check rejects unsafe syntax before persistence. It cannot pro
 migrations/                         versioned SQLite schema
 src/database.rs                     pool creation and migration startup
 src/state.rs                        shared SQLx pool
+src/app.rs                          composition of system and feature routers
+src/system/routes.rs                operational endpoints such as health
 src/applications/model.rs           DTO, domain model, and deployment statuses
 src/applications/validation.rs      creation input validation
 src/applications/repository.rs      INSERT and SELECT operations

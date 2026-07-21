@@ -1,6 +1,7 @@
 mod model;
 mod repository;
-pub(crate) mod routes;
+mod routes;
 pub(crate) mod validation;
 
 pub use model::{Application, ApplicationStatus, CreateApplicationRequest};
+pub(crate) use routes::router;

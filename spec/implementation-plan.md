@@ -42,6 +42,7 @@ Legend:
   - [x] Implement the application read routes.
   - [x] Validate creation inputs.
   - [x] Test valid, invalid, and persistent application data.
+  - [x] Clarify route ownership with system and feature routers.
   - [x] Document and verify the milestone.
 - [ ] **Milestone 4 — Background Git clone**
 - [ ] **Milestone 5 — Docker image build**

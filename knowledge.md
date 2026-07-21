@@ -164,6 +164,13 @@ Create one when a milestone introduces application code, infrastructure, or a si
   - SQLite remains a single-host MVP store and will be reconsidered before distributed workers;
   - only the `queued` transition is created in milestone 3, although the schema reserves the documented MVP statuses.
 
+### D-013 — HTTP route ownership
+
+- Date: 2026-07-21
+- Status: accepted
+- Decision: `src/app.rs` is the single HTTP composition root. Cohesive domain modules expose their own router, while operational endpoints such as health, readiness, or version information are grouped under `src/system/routes.rs`. A directory represents a capability, not an individual endpoint, and there is no generic top-level `routes` directory.
+- Reason: this keeps the complete router assembly easy to find, preserves feature ownership as the API grows, and avoids both a misleading global routes directory and one directory per small endpoint.
+
 ## Open decisions
 
 - Accept or revise D-012 during the milestone 3 review.
