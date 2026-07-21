@@ -51,10 +51,9 @@ The integration test builds the same router as the executable and sends it a req
 Cargo.toml               package metadata and dependencies
 src/main.rs              runtime, TCP listener, and server startup
 src/lib.rs               public library boundary
-src/app.rs               router assembly and request logging middleware
+src/app.rs               router composition and request logging middleware
 src/state.rs             shared application state
-src/routes/mod.rs        route module boundary
-src/routes/health.rs     health handler and response type
+src/system/routes.rs     operational router and health handler
 tests/health.rs          in-process HTTP contract test
 ```
 

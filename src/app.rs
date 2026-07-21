@@ -5,14 +5,14 @@ use axum::{
     extract::Request,
     middleware::{self, Next},
     response::Response,
-    routing::get,
 };
 
-use crate::{AppState, routes::health::health};
+use crate::{AppState, applications, system};
 
 pub fn app(state: AppState) -> Router {
     Router::new()
-        .route("/health", get(health))
+        .merge(system::router())
+        .merge(applications::router())
         .layer(middleware::from_fn(log_request))
         .with_state(state)
 }
