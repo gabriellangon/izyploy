@@ -221,7 +221,8 @@ Create one when a milestone introduces application code, infrastructure, or a si
 
 ## Open decisions
 
-- No technical decision is currently open.
+- Define the milestone 6 runtime contract: exact CPU, memory, and process limits; deterministic container naming and labels; loopback-only dynamic port publication; and how readiness is verified before declaring an application `running`.
+- Confirm that the existing single-deployment permit extends through container creation, port discovery, and readiness verification.
 
 ## Current state
 
@@ -231,8 +232,8 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
 - Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
 - Milestone 5 validation: explicitly accepted on 2026-07-22 after the end-to-end deployment permit, managed image tags and labels, `image_ready` state, persisted build logs, automated tests, and real Docker build were reviewed.
-- Current milestone: none; milestone 5 is complete and milestone 6 has not started.
-- Current branch: `main` after milestone 5 integration.
+- Current milestone: milestone 6 — application start and exposure, started on 2026-07-22 and in progress.
+- Current branch: `feat/milestone-6-application-runtime`.
 - Application code: one serialized background deployment pipeline now prepares Git sources and builds labeled Docker images through `source_ready`, `building`, `image_ready`, and `failed` outcomes.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -245,4 +246,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: present the milestone 6 container-start and port-exposure concepts, then begin that milestone after explicit user approval.
+- Next action: agree on the initial container runtime and readiness contract before implementing startup automation.
