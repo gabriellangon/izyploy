@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-22
 
-Current milestone: **None — Milestone 4 completed; Milestone 5 not started**
+Current milestone: **Milestone 5 — Docker image build (in progress)**
 
 Legend:
 
@@ -53,7 +53,14 @@ Legend:
   - [x] Transition successful work to `source_ready` and failures to `failed`.
   - [x] Test valid, invalid, and non-blocking source preparation.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 5 — Docker image build**
+- [ ] **Milestone 5 — Docker image build** — **In progress**
+  - [ ] Decide how the single-deployment permit spans clone and image build.
+  - [ ] Add an injectable Docker CLI abstraction with structured arguments.
+  - [ ] Generate safe internal image tags and Izyploy labels.
+  - [ ] Transition `source_ready` applications through `building`.
+  - [ ] Persist Docker build output and failure details.
+  - [ ] Test successful and intentionally failing builds.
+  - [ ] Document and verify the milestone.
 - [ ] **Milestone 6 — Application start and exposure**
 - [ ] **Milestone 7 — Logs, deletion, and recovery**
 - [ ] **Milestone 8 — Containerize Izyploy**
