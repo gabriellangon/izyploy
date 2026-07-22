@@ -212,6 +212,13 @@ GET    /applications/{id}/logs
 DELETE /applications/{id}
 ```
 
+Lifecycle behavior:
+
+- deployment logs are returned in persisted chronological order;
+- deletion is idempotent and returns success when the application is already absent;
+- deletion removes the managed container, image, workspace, database record, and logs;
+- interrupted transient deployment states become `failed` after an Izyploy restart rather than being resumed automatically.
+
 Exemple de création :
 
 ```json

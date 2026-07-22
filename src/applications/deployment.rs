@@ -78,6 +78,119 @@ impl DeploymentPreparer {
         }
     }
 
+    pub(crate) async fn delete(&self, application_id: uuid::Uuid) -> Result<(), DeploymentError> {
+        let _permit = self
+            .concurrency
+            .acquire()
+            .await
+            .expect("deployment semaphore should remain open");
+
+        if !repository::mark_deleting(&self.database, application_id).await? {
+            return Ok(());
+        }
+
+        repository::append_log(
+            &self.database,
+            application_id,
+            "cleanup",
+            "system",
+            "deleting application resources",
+        )
+        .await?;
+
+        if let Err(error) = self.delete_resources(application_id).await {
+            let message = error.to_string();
+            if let Err(log_error) = repository::append_log(
+                &self.database,
+                application_id,
+                "cleanup",
+                "system",
+                &message,
+            )
+            .await
+            {
+                tracing::error!(%application_id, %log_error, "failed to persist cleanup error log");
+            }
+            if let Err(status_error) =
+                repository::mark_failed(&self.database, application_id, &message).await
+            {
+                tracing::error!(%application_id, %status_error, "failed to persist cleanup failure");
+            }
+            return Err(error);
+        }
+
+        repository::delete(&self.database, application_id).await?;
+        tracing::info!(%application_id, "application resources deleted");
+
+        Ok(())
+    }
+
+    async fn delete_resources(&self, application_id: uuid::Uuid) -> Result<(), DeploymentError> {
+        let container_output = self
+            .docker_client
+            .remove_container(container_name(application_id))
+            .await
+            .map_err(DeploymentError::DockerCleanupCommand)?;
+        self.validate_cleanup_output(
+            application_id,
+            "container",
+            "No such container",
+            container_output,
+        )
+        .await?;
+
+        let image_output = self
+            .docker_client
+            .remove_image(image_tag(application_id))
+            .await
+            .map_err(DeploymentError::DockerCleanupCommand)?;
+        self.validate_cleanup_output(application_id, "image", "No such image", image_output)
+            .await?;
+
+        let workspace = self.workspace_root.join(application_id.to_string());
+        match fs::remove_dir_all(workspace).await {
+            Ok(()) => {}
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(DeploymentError::Workspace(error)),
+        }
+
+        Ok(())
+    }
+
+    async fn validate_cleanup_output(
+        &self,
+        application_id: uuid::Uuid,
+        resource: &'static str,
+        missing_marker: &'static str,
+        output: crate::docker::CommandOutput,
+    ) -> Result<(), DeploymentError> {
+        persist_command_output(
+            &self.database,
+            application_id,
+            "cleanup",
+            "stdout",
+            &output.stdout,
+        )
+        .await?;
+        persist_command_output(
+            &self.database,
+            application_id,
+            "cleanup",
+            "stderr",
+            &output.stderr,
+        )
+        .await?;
+
+        if output.success || output.stderr.contains(missing_marker) {
+            return Ok(());
+        }
+
+        Err(DeploymentError::CleanupFailed {
+            resource,
+            exit_code: output.exit_code,
+        })
+    }
+
     async fn prepare_deployment(&self, application: &Application) -> Result<(), DeploymentError> {
         let build_context = self.prepare_source(application).await?;
         self.build_image(application, build_context).await?;
@@ -354,14 +467,6 @@ impl DeploymentPreparer {
 
         let url = format!("http://127.0.0.1:{host_port}");
         repository::mark_running(&self.database, application.id, host_port, &url).await?;
-        repository::append_log(
-            &self.database,
-            application.id,
-            "runtime",
-            "system",
-            &format!("application running at {url}"),
-        )
-        .await?;
 
         tracing::info!(
             application_id = %application.id,
@@ -486,7 +591,7 @@ async fn validate_build_context(
 }
 
 #[derive(Debug)]
-enum DeploymentError {
+pub(crate) enum DeploymentError {
     Database(sqlx::Error),
     Workspace(std::io::Error),
     GitCommand(std::io::Error),
@@ -504,6 +609,11 @@ enum DeploymentError {
     PortDiscoveryFailed(Option<i32>),
     HostPortMissing,
     Readiness(std::io::Error),
+    DockerCleanupCommand(std::io::Error),
+    CleanupFailed {
+        resource: &'static str,
+        exit_code: Option<i32>,
+    },
 }
 
 impl Display for DeploymentError {
@@ -572,6 +682,23 @@ impl Display for DeploymentError {
                 formatter.write_str("Docker did not publish the application host port")
             }
             Self::Readiness(error) => write!(formatter, "application readiness failed: {error}"),
+            Self::DockerCleanupCommand(error) => {
+                write!(
+                    formatter,
+                    "Docker cleanup command failed to execute: {error}"
+                )
+            }
+            Self::CleanupFailed {
+                resource,
+                exit_code: Some(exit_code),
+            } => write!(
+                formatter,
+                "Docker {resource} cleanup failed with exit code {exit_code}"
+            ),
+            Self::CleanupFailed {
+                resource,
+                exit_code: None,
+            } => write!(formatter, "Docker {resource} cleanup was terminated"),
         }
     }
 }
@@ -585,6 +712,7 @@ impl DeploymentError {
             | Self::PortDiscoveryFailed(_)
             | Self::HostPortMissing
             | Self::Readiness(_) => "runtime",
+            Self::DockerCleanupCommand(_) | Self::CleanupFailed { .. } => "cleanup",
             _ => "source",
         }
     }
@@ -598,7 +726,8 @@ impl std::error::Error for DeploymentError {
             | Self::GitCommand(error)
             | Self::DockerBuildCommand(error)
             | Self::DockerRuntimeCommand(error)
-            | Self::Readiness(error) => Some(error),
+            | Self::Readiness(error)
+            | Self::DockerCleanupCommand(error) => Some(error),
             _ => None,
         }
     }

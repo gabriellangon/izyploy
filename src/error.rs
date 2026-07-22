@@ -12,11 +12,16 @@ pub(crate) enum ApiError {
     InvalidApplicationId,
     ApplicationNotFound,
     Database(sqlx::Error),
+    Internal(String),
 }
 
 impl ApiError {
     pub(crate) fn validation(error: ValidationError) -> Self {
         Self::Validation(error)
+    }
+
+    pub(crate) fn internal(error: impl std::fmt::Display) -> Self {
+        Self::Internal(error.to_string())
     }
 }
 
@@ -49,6 +54,15 @@ impl IntoResponse for ApiError {
             ),
             Self::Database(error) => {
                 tracing::error!(%error, "database operation failed");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    "an internal error occurred".to_owned(),
+                    None,
+                )
+            }
+            Self::Internal(error) => {
+                tracing::error!(%error, "internal operation failed");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "internal_error",

@@ -16,14 +16,19 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(database: SqlitePool, workspace_root: PathBuf) -> Self {
-        Self::with_clients(
+    pub async fn new(database: SqlitePool, workspace_root: PathBuf) -> Result<Self, sqlx::Error> {
+        let recovered = crate::applications::repository::recover_interrupted(&database).await?;
+        if recovered > 0 {
+            tracing::warn!(recovered, "marked interrupted deployments as failed");
+        }
+
+        Ok(Self::with_clients(
             database,
             workspace_root,
             Arc::new(CommandGitClient),
             Arc::new(CommandDockerClient),
             Arc::new(TcpReadinessProbe),
-        )
+        ))
     }
 
     pub fn with_clients(

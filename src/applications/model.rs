@@ -18,6 +18,16 @@ pub struct Application {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DeploymentLog {
+    pub id: i64,
+    pub application_id: Uuid,
+    pub stage: String,
+    pub stream: String,
+    pub message: String,
+    pub created_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ApplicationStatus {
