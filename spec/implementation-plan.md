@@ -2,9 +2,9 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
-Current milestone: **Milestone 4 — Background Git clone (in progress)**
+Current milestone: **None — Milestone 4 completed; Milestone 5 not started**
 
 Legend:
 
@@ -44,7 +44,7 @@ Legend:
   - [x] Test valid, invalid, and persistent application data.
   - [x] Clarify route ownership with system and feature routers.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 4 — Background Git clone** — **In progress**
+- [x] **Milestone 4 — Background Git clone**
   - [x] Add the `source_ready` state with a forward migration.
   - [x] Persist deployment logs.
   - [x] Launch source preparation in a Tokio background task.

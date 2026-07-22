@@ -182,7 +182,7 @@ Create one when a milestone introduces application code, infrastructure, or a si
 ### D-015 — Initial background source preparation
 
 - Date: 2026-07-21
-- Status: proposed — pending milestone 4 validation
+- Status: accepted
 - Decision: application creation spawns a process-local Tokio task. A shared semaphore permits one source preparation at a time, leaving later applications in `queued`. The task uses the Git CLI with structured arguments for a shallow single-branch clone, stores workspaces under `WORKSPACE_ROOT/<application-id>` (`data/workspaces` by default), and persists source logs in SQLite with stage and stream metadata.
 - Reason: this makes long Git work non-blocking and observable while preserving the MVP's initial single-deployment constraint. UUID workspaces and argument-safe process execution isolate applications and avoid shell injection.
 - Constraints:
@@ -194,17 +194,18 @@ Create one when a milestone introduces application code, infrastructure, or a si
 
 ## Open decisions
 
-- Accept or revise D-015 during the milestone 4 review.
+- No technical decision is currently open.
 
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
-- Current milestone: milestone 4 — background Git clone, started on 2026-07-21 and awaiting explicit user validation.
-- Current branch: `feat/milestone-4-git-clone`.
-- Application code: creation now launches serialized background Git source preparation with persisted logs, workspace confinement, `source_ready`, and `failed` outcomes; Docker automation has not started.
+- Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
+- Current milestone: none; milestone 4 is complete and milestone 5 has not started.
+- Current branch: `main` after milestone 4 integration.
+- Application code: serialized background Git source preparation is complete with persisted logs, workspace confinement, `source_ready`, and `failed` outcomes; Docker automation has not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -216,4 +217,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: review D-015 and the milestone 4 source-preparation flow, then obtain explicit user validation before starting Docker image builds.
+- Next action: present the milestone 5 Docker image-build concepts, then begin that milestone after explicit user approval.
