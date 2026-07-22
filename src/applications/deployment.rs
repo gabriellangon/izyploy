@@ -3,14 +3,16 @@ use std::{
     io::ErrorKind,
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 
 use sqlx::SqlitePool;
 use tokio::{fs, sync::Semaphore};
 
 use crate::{
-    docker::{BuildRequest, DockerClient},
+    docker::{BuildRequest, DockerClient, PortRequest, ResourceLimits, RunContainerRequest},
     git::{CloneRequest, GitClient},
+    runtime::ReadinessProbe,
 };
 
 use super::{
@@ -24,6 +26,7 @@ pub(crate) struct DeploymentPreparer {
     workspace_root: Arc<PathBuf>,
     git_client: Arc<dyn GitClient>,
     docker_client: Arc<dyn DockerClient>,
+    readiness_probe: Arc<dyn ReadinessProbe>,
     concurrency: Arc<Semaphore>,
 }
 
@@ -33,12 +36,14 @@ impl DeploymentPreparer {
         workspace_root: PathBuf,
         git_client: Arc<dyn GitClient>,
         docker_client: Arc<dyn DockerClient>,
+        readiness_probe: Arc<dyn ReadinessProbe>,
     ) -> Self {
         Self {
             database,
             workspace_root: Arc::new(workspace_root),
             git_client,
             docker_client,
+            readiness_probe,
             concurrency: Arc::new(Semaphore::new(1)),
         }
     }
@@ -75,7 +80,8 @@ impl DeploymentPreparer {
 
     async fn prepare_deployment(&self, application: &Application) -> Result<(), DeploymentError> {
         let build_context = self.prepare_source(application).await?;
-        self.build_image(application, build_context).await
+        self.build_image(application, build_context).await?;
+        self.start_container(application).await
     }
 
     async fn prepare_source(&self, application: &Application) -> Result<PathBuf, DeploymentError> {
@@ -191,7 +197,7 @@ impl DeploymentPreparer {
                 labels: image_labels(application),
             })
             .await
-            .map_err(DeploymentError::DockerCommand)?;
+            .map_err(DeploymentError::DockerBuildCommand)?;
 
         persist_command_output(
             &self.database,
@@ -238,13 +244,172 @@ impl DeploymentPreparer {
 
         Ok(())
     }
+
+    async fn start_container(&self, application: &Application) -> Result<(), DeploymentError> {
+        repository::transition_status(
+            &self.database,
+            application.id,
+            ApplicationStatus::ImageReady,
+            ApplicationStatus::Starting,
+        )
+        .await?;
+
+        let container_name = container_name(application.id);
+        repository::append_log(
+            &self.database,
+            application.id,
+            "runtime",
+            "system",
+            &format!("starting Docker container {container_name}"),
+        )
+        .await?;
+
+        let output = self
+            .docker_client
+            .run_container(RunContainerRequest {
+                container_name: container_name.clone(),
+                image_tag: image_tag(application.id),
+                container_port: application.container_port,
+                environment: vec![("PORT".to_owned(), application.container_port.to_string())],
+                labels: managed_labels(application, "container"),
+                limits: ResourceLimits {
+                    cpus: "1".to_owned(),
+                    memory: "512m".to_owned(),
+                    pids: 256,
+                },
+            })
+            .await
+            .map_err(DeploymentError::DockerRuntimeCommand)?;
+
+        persist_command_output(
+            &self.database,
+            application.id,
+            "runtime",
+            "stdout",
+            &output.stdout,
+        )
+        .await?;
+        persist_command_output(
+            &self.database,
+            application.id,
+            "runtime",
+            "stderr",
+            &output.stderr,
+        )
+        .await?;
+
+        if !output.success {
+            return Err(DeploymentError::ContainerStartFailed(output.exit_code));
+        }
+
+        let port_output = self
+            .docker_client
+            .inspect_host_port(PortRequest {
+                container_name: container_name.clone(),
+                container_port: application.container_port,
+            })
+            .await
+            .map_err(DeploymentError::DockerRuntimeCommand)?;
+
+        persist_command_output(
+            &self.database,
+            application.id,
+            "runtime",
+            "stdout",
+            &port_output.stdout,
+        )
+        .await?;
+        persist_command_output(
+            &self.database,
+            application.id,
+            "runtime",
+            "stderr",
+            &port_output.stderr,
+        )
+        .await?;
+
+        if !port_output.success {
+            return Err(DeploymentError::PortDiscoveryFailed(port_output.exit_code));
+        }
+        let host_port = port_output
+            .host_port
+            .ok_or(DeploymentError::HostPortMissing)?;
+
+        repository::append_log(
+            &self.database,
+            application.id,
+            "runtime",
+            "system",
+            &format!("waiting for application on 127.0.0.1:{host_port}"),
+        )
+        .await?;
+
+        let readiness_result = self
+            .readiness_probe
+            .wait_until_ready(host_port, Duration::from_secs(30))
+            .await;
+        self.persist_container_logs(application.id, container_name.clone())
+            .await;
+        readiness_result.map_err(DeploymentError::Readiness)?;
+
+        let url = format!("http://127.0.0.1:{host_port}");
+        repository::mark_running(&self.database, application.id, host_port, &url).await?;
+        repository::append_log(
+            &self.database,
+            application.id,
+            "runtime",
+            "system",
+            &format!("application running at {url}"),
+        )
+        .await?;
+
+        tracing::info!(
+            application_id = %application.id,
+            %container_name,
+            %url,
+            "application container started"
+        );
+
+        Ok(())
+    }
+
+    async fn persist_container_logs(&self, application_id: uuid::Uuid, container_name: String) {
+        match self.docker_client.container_logs(container_name).await {
+            Ok(output) => {
+                for (stream, message) in [("stdout", output.stdout), ("stderr", output.stderr)] {
+                    if let Err(error) = persist_command_output(
+                        &self.database,
+                        application_id,
+                        "runtime",
+                        stream,
+                        &message,
+                    )
+                    .await
+                    {
+                        tracing::error!(%application_id, %error, "failed to persist container logs");
+                    }
+                }
+            }
+            Err(error) => {
+                tracing::warn!(%application_id, %error, "failed to read container logs");
+            }
+        }
+    }
 }
 
 pub(crate) fn image_tag(application_id: uuid::Uuid) -> String {
     format!("izyploy/application:{application_id}")
 }
 
+pub(crate) fn container_name(application_id: uuid::Uuid) -> String {
+    format!("izyploy-app-{application_id}")
+}
+
 fn image_labels(application: &Application) -> Vec<(String, String)> {
+    managed_labels(application, "image")
+}
+
+fn managed_labels(application: &Application, resource_kind: &str) -> Vec<(String, String)> {
     vec![
         ("com.izyploy.managed".to_owned(), "true".to_owned()),
         (
@@ -254,6 +419,10 @@ fn image_labels(application: &Application) -> Vec<(String, String)> {
         (
             "com.izyploy.application.name".to_owned(),
             application.name.clone(),
+        ),
+        (
+            "com.izyploy.resource.kind".to_owned(),
+            resource_kind.to_owned(),
         ),
     ]
 }
@@ -321,7 +490,7 @@ enum DeploymentError {
     Database(sqlx::Error),
     Workspace(std::io::Error),
     GitCommand(std::io::Error),
-    DockerCommand(std::io::Error),
+    DockerBuildCommand(std::io::Error),
     WorkspaceAlreadyExists,
     GitCloneFailed(Option<i32>),
     BuildContextMissing,
@@ -330,6 +499,11 @@ enum DeploymentError {
     DockerfileMissing,
     DockerfileNotRegularFile,
     DockerBuildFailed(Option<i32>),
+    DockerRuntimeCommand(std::io::Error),
+    ContainerStartFailed(Option<i32>),
+    PortDiscoveryFailed(Option<i32>),
+    HostPortMissing,
+    Readiness(std::io::Error),
 }
 
 impl Display for DeploymentError {
@@ -338,8 +512,8 @@ impl Display for DeploymentError {
             Self::Database(_) => formatter.write_str("database operation failed"),
             Self::Workspace(error) => write!(formatter, "workspace operation failed: {error}"),
             Self::GitCommand(error) => write!(formatter, "Git command failed to execute: {error}"),
-            Self::DockerCommand(error) => {
-                write!(formatter, "Docker command failed to execute: {error}")
+            Self::DockerBuildCommand(error) => {
+                write!(formatter, "Docker build command failed to execute: {error}")
             }
             Self::WorkspaceAlreadyExists => {
                 formatter.write_str("application workspace already exists")
@@ -370,6 +544,34 @@ impl Display for DeploymentError {
             Self::DockerBuildFailed(None) => {
                 formatter.write_str("Docker image build was terminated")
             }
+            Self::DockerRuntimeCommand(error) => {
+                write!(
+                    formatter,
+                    "Docker runtime command failed to execute: {error}"
+                )
+            }
+            Self::ContainerStartFailed(Some(exit_code)) => {
+                write!(
+                    formatter,
+                    "Docker container start failed with exit code {exit_code}"
+                )
+            }
+            Self::ContainerStartFailed(None) => {
+                formatter.write_str("Docker container start was terminated")
+            }
+            Self::PortDiscoveryFailed(Some(exit_code)) => {
+                write!(
+                    formatter,
+                    "Docker port discovery failed with exit code {exit_code}"
+                )
+            }
+            Self::PortDiscoveryFailed(None) => {
+                formatter.write_str("Docker port discovery was terminated")
+            }
+            Self::HostPortMissing => {
+                formatter.write_str("Docker did not publish the application host port")
+            }
+            Self::Readiness(error) => write!(formatter, "application readiness failed: {error}"),
         }
     }
 }
@@ -377,7 +579,12 @@ impl Display for DeploymentError {
 impl DeploymentError {
     fn stage(&self) -> &'static str {
         match self {
-            Self::DockerCommand(_) | Self::DockerBuildFailed(_) => "build",
+            Self::DockerBuildCommand(_) | Self::DockerBuildFailed(_) => "build",
+            Self::DockerRuntimeCommand(_)
+            | Self::ContainerStartFailed(_)
+            | Self::PortDiscoveryFailed(_)
+            | Self::HostPortMissing
+            | Self::Readiness(_) => "runtime",
             _ => "source",
         }
     }
@@ -387,9 +594,11 @@ impl std::error::Error for DeploymentError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Database(error) => Some(error),
-            Self::Workspace(error) | Self::GitCommand(error) | Self::DockerCommand(error) => {
-                Some(error)
-            }
+            Self::Workspace(error)
+            | Self::GitCommand(error)
+            | Self::DockerBuildCommand(error)
+            | Self::DockerRuntimeCommand(error)
+            | Self::Readiness(error) => Some(error),
             _ => None,
         }
     }

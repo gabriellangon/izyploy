@@ -71,8 +71,17 @@ queued → cloning → source_ready → building → image_ready → starting �
         ↓
 GET /applications/{id}
         ↓
-http://localhost:<port>
+http://127.0.0.1:<port>
 ```
+
+Initial container runtime contract:
+
+- deterministic container name derived from the application UUID;
+- 1 CPU, 512 MiB of memory, and 256 processes per application;
+- `PORT` set to the declared internal container port;
+- dynamic host port published only on `127.0.0.1`;
+- TCP readiness checked for up to 30 seconds before `running`;
+- Izyploy ownership and resource-kind labels on managed images and containers.
 
 ## 5. Hors périmètre du premier MVP
 

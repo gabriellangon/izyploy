@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-22
 
-Current milestone: **None — Milestone 5 completed; Milestone 6 not started**
+Current milestone: **None — Milestone 6 completed; Milestone 7 not started**
 
 Legend:
 
@@ -61,7 +61,16 @@ Legend:
   - [x] Persist Docker build output and failure details.
   - [x] Test successful and intentionally failing builds.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 6 — Application start and exposure**
+- [x] **Milestone 6 — Application start and exposure**
+  - [x] Define the initial container resource and network contract.
+  - [x] Extend the single-deployment permit through container startup.
+  - [x] Add injectable Docker container run and inspection operations.
+  - [x] Generate safe container names and ownership labels.
+  - [x] Publish a loopback-only dynamic host port and provide `PORT`.
+  - [x] Persist the assigned port and application URL.
+  - [x] Transition `image_ready` applications through `starting` to `running`.
+  - [x] Test successful startup, runtime failure, and port discovery.
+  - [x] Verify the complete API-to-HTTP flow and document the milestone.
 - [ ] **Milestone 7 — Logs, deletion, and recovery**
 - [ ] **Milestone 8 — Containerize Izyploy**
 - [ ] **Milestone 9 — Minimal web interface**
@@ -246,6 +255,8 @@ Travail :
 - passer à `running`.
 
 Livrable : le dépôt soumis devient une application ouvrable dans le navigateur.
+
+Document d'apprentissage : [`docs/milestones/milestone-06-application-runtime.md`](../docs/milestones/milestone-06-application-runtime.md).
 
 Validation : appel HTTP réel et inspection du conteneur.
 

@@ -6,6 +6,7 @@ use crate::{
     applications::deployment::DeploymentPreparer,
     docker::{CommandDockerClient, DockerClient},
     git::{CommandGitClient, GitClient},
+    runtime::{ReadinessProbe, TcpReadinessProbe},
 };
 
 #[derive(Clone)]
@@ -21,6 +22,7 @@ impl AppState {
             workspace_root,
             Arc::new(CommandGitClient),
             Arc::new(CommandDockerClient),
+            Arc::new(TcpReadinessProbe),
         )
     }
 
@@ -29,9 +31,15 @@ impl AppState {
         workspace_root: PathBuf,
         git_client: Arc<dyn GitClient>,
         docker_client: Arc<dyn DockerClient>,
+        readiness_probe: Arc<dyn ReadinessProbe>,
     ) -> Self {
-        let deployment_preparer =
-            DeploymentPreparer::new(database.clone(), workspace_root, git_client, docker_client);
+        let deployment_preparer = DeploymentPreparer::new(
+            database.clone(),
+            workspace_root,
+            git_client,
+            docker_client,
+            readiness_probe,
+        );
         Self {
             database,
             deployment_preparer: Some(deployment_preparer),
