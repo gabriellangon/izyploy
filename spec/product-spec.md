@@ -67,7 +67,7 @@ Le premier parcours démontrable est :
 ```text
 POST /applications
         ↓
-queued → cloning → source_ready → building → starting → running
+queued → cloning → source_ready → building → image_ready → starting → running
         ↓
 GET /applications/{id}
         ↓
@@ -183,6 +183,7 @@ queued
 cloning
 source_ready
 building
+image_ready
 starting
 running
 failed

@@ -12,7 +12,7 @@ async fn health_returns_ok() {
     let database = SqlitePoolOptions::new()
         .connect_lazy("sqlite::memory:")
         .expect("in-memory database URL should be valid");
-    let response = app(AppState::without_source_preparation(database))
+    let response = app(AppState::without_deployment_preparation(database))
         .oneshot(
             Request::builder()
                 .uri("/health")

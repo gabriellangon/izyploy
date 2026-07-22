@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-22
 
-Current milestone: **None — Milestone 4 completed; Milestone 5 not started**
+Current milestone: **None — Milestone 5 completed; Milestone 6 not started**
 
 Legend:
 
@@ -53,7 +53,14 @@ Legend:
   - [x] Transition successful work to `source_ready` and failures to `failed`.
   - [x] Test valid, invalid, and non-blocking source preparation.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 5 — Docker image build**
+- [x] **Milestone 5 — Docker image build**
+  - [x] Decide how the single-deployment permit spans clone and image build.
+  - [x] Add an injectable Docker CLI abstraction with structured arguments.
+  - [x] Generate safe internal image tags and Izyploy labels.
+  - [x] Transition `source_ready` applications through `building` to `image_ready`.
+  - [x] Persist Docker build output and failure details.
+  - [x] Test successful and intentionally failing builds.
+  - [x] Document and verify the milestone.
 - [ ] **Milestone 6 — Application start and exposure**
 - [ ] **Milestone 7 — Logs, deletion, and recovery**
 - [ ] **Milestone 8 — Containerize Izyploy**
@@ -216,6 +223,8 @@ Travail :
 - identifier l'image avec des labels Izyploy.
 
 Livrable : une image Docker identifiable est créée depuis l'API.
+
+Document d'apprentissage : [`docs/milestones/milestone-05-docker-image-build.md`](../docs/milestones/milestone-05-docker-image-build.md).
 
 Validation : vérifier l'image et provoquer volontairement un build en erreur.
 

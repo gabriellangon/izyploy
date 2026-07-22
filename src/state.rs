@@ -3,37 +3,45 @@ use std::{path::PathBuf, sync::Arc};
 use sqlx::SqlitePool;
 
 use crate::{
-    applications::source::SourcePreparer,
+    applications::deployment::DeploymentPreparer,
+    docker::{CommandDockerClient, DockerClient},
     git::{CommandGitClient, GitClient},
 };
 
 #[derive(Clone)]
 pub struct AppState {
     database: SqlitePool,
-    source_preparer: Option<SourcePreparer>,
+    deployment_preparer: Option<DeploymentPreparer>,
 }
 
 impl AppState {
     pub fn new(database: SqlitePool, workspace_root: PathBuf) -> Self {
-        Self::with_git_client(database, workspace_root, Arc::new(CommandGitClient))
+        Self::with_clients(
+            database,
+            workspace_root,
+            Arc::new(CommandGitClient),
+            Arc::new(CommandDockerClient),
+        )
     }
 
-    pub fn with_git_client(
+    pub fn with_clients(
         database: SqlitePool,
         workspace_root: PathBuf,
         git_client: Arc<dyn GitClient>,
+        docker_client: Arc<dyn DockerClient>,
     ) -> Self {
-        let source_preparer = SourcePreparer::new(database.clone(), workspace_root, git_client);
+        let deployment_preparer =
+            DeploymentPreparer::new(database.clone(), workspace_root, git_client, docker_client);
         Self {
             database,
-            source_preparer: Some(source_preparer),
+            deployment_preparer: Some(deployment_preparer),
         }
     }
 
-    pub fn without_source_preparation(database: SqlitePool) -> Self {
+    pub fn without_deployment_preparation(database: SqlitePool) -> Self {
         Self {
             database,
-            source_preparer: None,
+            deployment_preparer: None,
         }
     }
 
@@ -41,7 +49,7 @@ impl AppState {
         &self.database
     }
 
-    pub(crate) fn source_preparer(&self) -> Option<&SourcePreparer> {
-        self.source_preparer.as_ref()
+    pub(crate) fn deployment_preparer(&self) -> Option<&DeploymentPreparer> {
+        self.deployment_preparer.as_ref()
     }
 }
