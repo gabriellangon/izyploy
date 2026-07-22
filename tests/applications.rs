@@ -153,7 +153,7 @@ async fn test_state(database_url: &str) -> AppState {
     let database = database::connect(database_url)
         .await
         .expect("test database should connect and migrate");
-    AppState::new(database)
+    AppState::without_source_preparation(database)
 }
 
 fn database_url(temporary_directory: &TempDir) -> String {

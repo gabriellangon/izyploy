@@ -2,9 +2,9 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
-Current milestone: **None — Milestone 3 completed; Milestone 4 not started**
+Current milestone: **None — Milestone 4 completed; Milestone 5 not started**
 
 Legend:
 
@@ -44,7 +44,15 @@ Legend:
   - [x] Test valid, invalid, and persistent application data.
   - [x] Clarify route ownership with system and feature routers.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 4 — Background Git clone**
+- [x] **Milestone 4 — Background Git clone**
+  - [x] Add the `source_ready` state with a forward migration.
+  - [x] Persist deployment logs.
+  - [x] Launch source preparation in a Tokio background task.
+  - [x] Clone Git with structured arguments into an isolated workspace.
+  - [x] Confine and validate the build context and root `Dockerfile`.
+  - [x] Transition successful work to `source_ready` and failures to `failed`.
+  - [x] Test valid, invalid, and non-blocking source preparation.
+  - [x] Document and verify the milestone.
 - [ ] **Milestone 5 — Docker image build**
 - [ ] **Milestone 6 — Application start and exposure**
 - [ ] **Milestone 7 — Logs, deletion, and recovery**
@@ -187,7 +195,7 @@ Travail :
 - enregistrer les logs ;
 - passer à `failed` avec une erreur utile en cas d'échec.
 
-Livrable : l'API répond rapidement pendant que le clone se poursuit.
+Livrable : l'API répond rapidement pendant que le clone se poursuit, accompagnée du document d'apprentissage [`docs/milestones/milestone-04-background-git-clone.md`](../docs/milestones/milestone-04-background-git-clone.md).
 
 Validation : tester un dépôt valide, une URL invalide et un dépôt sans `Dockerfile`.
 

@@ -19,10 +19,11 @@ pub struct Application {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum ApplicationStatus {
     Queued,
     Cloning,
+    SourceReady,
     Building,
     Starting,
     Running,
@@ -35,6 +36,7 @@ impl ApplicationStatus {
         match self {
             Self::Queued => "queued",
             Self::Cloning => "cloning",
+            Self::SourceReady => "source_ready",
             Self::Building => "building",
             Self::Starting => "starting",
             Self::Running => "running",
@@ -47,6 +49,7 @@ impl ApplicationStatus {
         match value {
             "queued" => Ok(Self::Queued),
             "cloning" => Ok(Self::Cloning),
+            "source_ready" => Ok(Self::SourceReady),
             "building" => Ok(Self::Building),
             "starting" => Ok(Self::Starting),
             "running" => Ok(Self::Running),

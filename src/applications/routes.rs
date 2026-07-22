@@ -27,6 +27,13 @@ async fn create(
     let new_application = validate(request).map_err(ApiError::validation)?;
     let application = repository::create(state.database(), new_application).await?;
 
+    if let Some(source_preparer) = state.source_preparer().cloned() {
+        let queued_application = application.clone();
+        tokio::spawn(async move {
+            source_preparer.prepare(queued_application).await;
+        });
+    }
+
     Ok((StatusCode::CREATED, Json(application)))
 }
 
