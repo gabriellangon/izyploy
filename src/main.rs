@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use izyploy::{AppState, app, database};
 use tokio::net::TcpListener;
 
@@ -11,7 +13,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database_url =
         std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://izyploy.db".to_owned());
     let database = database::connect(&database_url).await?;
-    let state = AppState::new(database);
+    let workspace_root = std::env::var("WORKSPACE_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("data/workspaces"));
+    let state = AppState::new(database, workspace_root);
 
     let listener = TcpListener::bind(("127.0.0.1", 3000)).await?;
     let address = listener.local_addr()?;

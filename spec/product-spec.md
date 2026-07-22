@@ -67,7 +67,7 @@ Le premier parcours démontrable est :
 ```text
 POST /applications
         ↓
-queued → cloning → building → starting → running
+queued → cloning → source_ready → building → starting → running
         ↓
 GET /applications/{id}
         ↓
@@ -181,6 +181,7 @@ Une application possède au minimum :
 ```text
 queued
 cloning
+source_ready
 building
 starting
 running

@@ -172,9 +172,29 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Reason: this keeps the complete router assembly easy to find, preserves feature ownership as the API grows, and avoids both a misleading global routes directory and one directory per small endpoint.
 - Constraint: a top-level `features/` namespace is intentionally deferred until multiple domain capabilities make that extra grouping useful; the current capability-oriented modules already provide the required boundaries.
 
+### D-014 — Source-ready deployment state
+
+- Date: 2026-07-21
+- Status: accepted
+- Decision: a successful clone and source validation transition an application from `cloning` to `source_ready`. Milestone 5 will transition `source_ready` to `building` only when the Docker build actually begins.
+- Reason: leaving completed work in `cloning` or advancing it prematurely to `building` would make the persisted state misleading. The intermediate state also gives milestone 4 a truthful, observable success condition.
+
+### D-015 — Initial background source preparation
+
+- Date: 2026-07-21
+- Status: proposed — pending milestone 4 validation
+- Decision: application creation spawns a process-local Tokio task. A shared semaphore permits one source preparation at a time, leaving later applications in `queued`. The task uses the Git CLI with structured arguments for a shallow single-branch clone, stores workspaces under `WORKSPACE_ROOT/<application-id>` (`data/workspaces` by default), and persists source logs in SQLite with stage and stream metadata.
+- Reason: this makes long Git work non-blocking and observable while preserving the MVP's initial single-deployment constraint. UUID workspaces and argument-safe process execution isolate applications and avoid shell injection.
+- Constraints:
+  - tasks and the semaphore exist only in the API process; a restart does not resume `queued` or `cloning` work;
+  - command output is captured when Git exits rather than streamed line by line;
+  - partial and failed workspaces are retained until lifecycle cleanup is implemented in milestone 7;
+  - deployment logs are persisted now but are not exposed by HTTP until the logs milestone;
+  - `git` must be installed and available on the API process `PATH`.
+
 ## Open decisions
 
-No technical decision is currently open.
+- Accept or revise D-015 during the milestone 4 review.
 
 ## Current state
 
@@ -182,9 +202,9 @@ No technical decision is currently open.
 - Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
-- Current milestone: none; milestone 4 has not started.
-- Current branch: `main` after the milestone 3 integration.
-- Application code: application creation, validation, SQLite persistence, listing, and lookup are implemented with Axum and SQLx; Git and Docker automation have not started.
+- Current milestone: milestone 4 — background Git clone, started on 2026-07-21 and awaiting explicit user validation.
+- Current branch: `feat/milestone-4-git-clone`.
+- Application code: creation now launches serialized background Git source preparation with persisted logs, workspace confinement, `source_ready`, and `failed` outcomes; Docker automation has not started.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -196,4 +216,4 @@ No technical decision is currently open.
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: present the milestone 4 background Git concepts and start it only after explicit user approval.
+- Next action: review D-015 and the milestone 4 source-preparation flow, then obtain explicit user validation before starting Docker image builds.

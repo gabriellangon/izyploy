@@ -80,6 +80,76 @@ pub(crate) async fn find_by_id(
     row.map(application_from_row).transpose()
 }
 
+pub(crate) async fn transition_status(
+    database: &SqlitePool,
+    id: Uuid,
+    current_status: ApplicationStatus,
+    next_status: ApplicationStatus,
+) -> Result<(), sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE applications
+         SET status = ?, error = NULL, updated_at = ?
+         WHERE id = ? AND status = ?",
+    )
+    .bind(next_status.as_str())
+    .bind(Utc::now().to_rfc3339())
+    .bind(id.to_string())
+    .bind(current_status.as_str())
+    .execute(database)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(sqlx::Error::Protocol(format!(
+            "application {id} did not transition from {} to {}",
+            current_status.as_str(),
+            next_status.as_str()
+        )))
+    }
+}
+
+pub(crate) async fn mark_failed(
+    database: &SqlitePool,
+    id: Uuid,
+    error: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE applications
+         SET status = 'failed', error = ?, updated_at = ?
+         WHERE id = ?",
+    )
+    .bind(error)
+    .bind(Utc::now().to_rfc3339())
+    .bind(id.to_string())
+    .execute(database)
+    .await?;
+
+    Ok(())
+}
+
+pub(crate) async fn append_log(
+    database: &SqlitePool,
+    application_id: Uuid,
+    stage: &str,
+    stream: &str,
+    message: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "INSERT INTO deployment_logs (application_id, stage, stream, message, created_at)
+         VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(application_id.to_string())
+    .bind(stage)
+    .bind(stream)
+    .bind(message)
+    .bind(Utc::now().to_rfc3339())
+    .execute(database)
+    .await?;
+
+    Ok(())
+}
+
 fn application_from_row(row: SqliteRow) -> Result<Application, sqlx::Error> {
     let id = Uuid::parse_str(&row.try_get::<String, _>("id")?)
         .map_err(|error| sqlx::Error::Decode(Box::new(error)))?;
