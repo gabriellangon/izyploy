@@ -192,9 +192,36 @@ Create one when a milestone introduces application code, infrastructure, or a si
   - deployment logs are persisted now but are not exposed by HTTP until the logs milestone;
   - `git` must be installed and available on the API process `PATH`.
 
+### D-016 — End-to-end single-deployment permit
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: the process-local semaphore introduced for source preparation now covers the complete background preparation pipeline from Git clone through Docker image build. A later application remains `queued` until the active application either reaches `image_ready` or fails.
+- Reason: clone and image build are both resource-intensive deployment work. Keeping one permit across both stages preserves the MVP's simple one-deployment-at-a-time guarantee and prevents the source module from accidentally acting as a partial queue.
+- Constraint: this remains an in-memory, single-process coordination mechanism. Restart recovery and distributed workers are deferred to milestones 7 and 14.
+
+### D-017 — Image-ready deployment state
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: a successful Docker build transitions an application from `building` to `image_ready`. Milestone 6 will begin container creation by transitioning `image_ready` to `starting`.
+- Reason: a completed image must not remain misleadingly in `building`, and milestone 5 must not advance to `starting` before container startup exists. The explicit state provides a truthful, observable boundary between the two milestones.
+
+### D-018 — Initial managed Docker image build
+
+- Date: 2026-07-22
+- Status: proposed — pending milestone 5 validation
+- Decision: Izyploy invokes the Docker CLI with structured arguments and no shell. Each image receives the deterministic tag `izyploy/application:<application-id>` plus `com.izyploy.managed`, `com.izyploy.application.id`, and `com.izyploy.application.name` labels. Docker stdout and stderr are persisted as build-stage deployment logs.
+- Reason: a UUID-derived tag is safe and reproducible for milestone 6, labels make ownership inspectable independently of the tag, and argument-safe execution avoids shell injection. Persisted output makes build failures diagnosable.
+- Constraints:
+  - build output is captured when Docker exits rather than streamed line by line;
+  - failed builds may leave cache or intermediate resources until lifecycle cleanup is implemented;
+  - Dockerfiles are trusted operator-controlled code because a Docker build can execute arbitrary instructions with access to the host Docker daemon;
+  - `docker` must be installed, available on `PATH`, and connected to the host engine.
+
 ## Open decisions
 
-- Decide whether milestone 5 should evolve the current source-preparation semaphore into one end-to-end deployment permit spanning clone and Docker build. This preserves the MVP's one-deployment-at-a-time behavior but changes ownership from a source-only concern to orchestration.
+- Accept or revise D-018 during the milestone 5 review.
 
 ## Current state
 
@@ -205,7 +232,7 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
 - Current milestone: milestone 5 — Docker image build, started on 2026-07-22 and in progress.
 - Current branch: `feat/milestone-5-docker-build`.
-- Application code: serialized background Git source preparation is complete with persisted logs, workspace confinement, `source_ready`, and `failed` outcomes; Docker image-build orchestration is being designed.
+- Application code: one serialized background deployment pipeline now prepares Git sources and builds labeled Docker images through `source_ready`, `building`, `image_ready`, and `failed` outcomes.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -217,4 +244,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: resolve ownership of the single-deployment permit before implementing Docker image builds.
+- Next action: verify the Docker build through the real API, document the milestone, and obtain explicit milestone 5 validation.

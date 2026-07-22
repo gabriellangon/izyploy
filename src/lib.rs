@@ -1,6 +1,7 @@
 mod app;
 pub mod applications;
 pub mod database;
+pub mod docker;
 mod error;
 pub mod git;
 mod state;

@@ -110,7 +110,7 @@ DELETE /applications/{id}
 
 The product specification and implementation roadmap are established. The complete Docker lifecycle has been verified manually with the PHP example application: image build, container start, port publication, HTTP checks, log and metadata inspection, and resource cleanup.
 
-Milestone 4 is complete. New applications begin in `queued`, then a serialized Tokio background task clones and validates their trusted GitHub source before moving them to `source_ready`. Milestone 5 is now extending that flow with managed Docker image construction.
+Milestone 5 is implemented and awaiting explicit validation. One serialized Tokio background pipeline clones and validates trusted GitHub sources, builds labeled Docker images, persists Git and Docker output, and moves successful applications through `source_ready` and `building` to `image_ready`.
 
 ## Security boundary
 
