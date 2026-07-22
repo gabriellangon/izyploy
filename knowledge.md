@@ -223,14 +223,14 @@ Create one when a milestone introduces application code, infrastructure, or a si
 
 - Date: 2026-07-22
 - Status: accepted
-- Decision: after a milestone branch is created, its implementation, tests, real verification, and learning documentation are completed locally before the result is presented for explicit user validation. The milestone is then closed, merged into `main`, and all branches are published together. A milestone-start branch does not need to be pushed separately.
+- Decision: after a milestone branch is created locally, its implementation, tests, real verification, and learning documentation remain uncommitted and unpublished until the result is presented for explicit user validation. After validation, the complete milestone is committed, closed, merged into `main`, and all branches are published together. A milestone-start branch does not need a separate commit or push.
 - Reason: this keeps remote history aligned with reviewable, complete learning increments and avoids publishing an empty milestone shell before its implementation exists.
-- Constraint: the milestone 6 branch had already been published with its start-only commit before this workflow was clarified; subsequent milestone 6 implementation remains local until validation.
+- Constraint: milestone 6 had already received a remote start-only commit and a local functional commit before the stricter no-commit-before-validation rule was clarified. The rule applies fully from milestone 7 onward.
 
 ### D-020 — Initial managed container runtime
 
 - Date: 2026-07-22
-- Status: proposed — pending milestone 6 validation
+- Status: accepted
 - Decision: Izyploy starts one container named `izyploy-app-<application-id>` from the deterministic application image. It supplies `PORT=<container-port>`, limits the container to 1 CPU, 512 MiB of memory, and 256 processes, and asks Docker to publish the application port dynamically on `127.0.0.1`. Managed resources carry application ownership and resource-kind labels. Izyploy discovers the assigned host port, waits up to 30 seconds for a TCP connection, stores `host_port` and `http://127.0.0.1:<host-port>`, then transitions `starting` to `running`.
 - Reason: Docker-selected host ports prevent allocation races, loopback binding avoids unintended network exposure, resource limits constrain accidental host exhaustion, and a generic TCP probe avoids imposing an application-specific health route in the first runtime contract.
 - Constraints:
@@ -242,18 +242,19 @@ Create one when a milestone introduces application code, infrastructure, or a si
 
 ## Open decisions
 
-- Accept or revise D-020 during the milestone 6 review.
+- No technical decision is currently open.
 
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build; milestone 6 — application start and exposure.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
 - Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
 - Milestone 5 validation: explicitly accepted on 2026-07-22 after the end-to-end deployment permit, managed image tags and labels, `image_ready` state, persisted build logs, automated tests, and real Docker build were reviewed.
-- Current milestone: milestone 6 — application start and exposure, started on 2026-07-22 and in progress.
-- Current branch: `feat/milestone-6-application-runtime`.
+- Milestone 6 validation: explicitly accepted on 2026-07-22 after resource-limited container startup, dynamic loopback port publication, readiness verification, persisted URL, automated tests, and the complete API-to-HTTP flow were reviewed.
+- Current milestone: none; milestone 6 is complete and milestone 7 has not started.
+- Current branch: `main` after milestone 6 integration.
 - Application code: one serialized background deployment pipeline now prepares Git sources, builds labeled images, starts resource-limited containers, discovers loopback ports, verifies TCP readiness, and persists `running`, `host_port`, and `url` outcomes.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -266,4 +267,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: review the milestone 6 runtime contract and complete API-to-HTTP flow, then obtain explicit validation before integration and publication.
+- Next action: start milestone 7 locally and keep all implementation uncommitted and unpublished until explicit validation.

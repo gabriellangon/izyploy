@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-22
 
-Current milestone: **Milestone 6 — Application start and exposure (in progress)**
+Current milestone: **None — Milestone 6 completed; Milestone 7 not started**
 
 Legend:
 
@@ -61,7 +61,7 @@ Legend:
   - [x] Persist Docker build output and failure details.
   - [x] Test successful and intentionally failing builds.
   - [x] Document and verify the milestone.
-- [ ] **Milestone 6 — Application start and exposure** — **In progress**
+- [x] **Milestone 6 — Application start and exposure**
   - [x] Define the initial container resource and network contract.
   - [x] Extend the single-deployment permit through container startup.
   - [x] Add injectable Docker container run and inspection operations.
