@@ -11,8 +11,12 @@ use axum::{
 };
 use izyploy::{
     AppState, app, database,
-    docker::{BuildFuture, BuildOutput, BuildRequest, DockerClient},
+    docker::{
+        BuildFuture, BuildOutput, BuildRequest, CommandFuture, CommandOutput, DockerClient,
+        PortFuture, PortOutput, PortRequest, RunContainerRequest,
+    },
     git::{CloneFuture, CloneOutput, CloneRequest, GitClient},
+    runtime::{ReadinessFuture, ReadinessProbe},
 };
 use serde_json::{Value, json};
 use tempfile::TempDir;
@@ -45,7 +49,7 @@ async fn creation_returns_before_deployment_preparation_finishes() {
         .expect("background Git clone should start");
     release.notify_one();
 
-    let ready = wait_for_status(&state, application_id, "image_ready").await;
+    let ready = wait_for_status(&state, application_id, "running").await;
     assert_eq!(ready["error"], Value::Null);
     assert!(
         temporary_directory
@@ -98,9 +102,9 @@ async fn only_one_deployment_preparation_runs_at_a_time() {
     assert_ne!(cloning_id, queued_id);
 
     release.notify_one();
-    wait_for_status(&state, cloning_id, "image_ready").await;
+    wait_for_status(&state, cloning_id, "running").await;
     release.notify_one();
-    wait_for_status(&state, queued_id, "image_ready").await;
+    wait_for_status(&state, queued_id, "running").await;
 }
 
 #[tokio::test]
@@ -128,12 +132,12 @@ async fn deployment_permit_remains_held_during_docker_build() {
     assert_eq!(second_while_first_builds["status"], "queued");
 
     release_build.notify_one();
-    wait_for_status(&state, first_id, "image_ready").await;
+    wait_for_status(&state, first_id, "running").await;
     time::timeout(Duration::from_secs(1), build_started.notified())
         .await
         .expect("second Docker build should start after the first completes");
     release_build.notify_one();
-    wait_for_status(&state, second_id, "image_ready").await;
+    wait_for_status(&state, second_id, "running").await;
 }
 
 #[tokio::test]
@@ -150,7 +154,7 @@ async fn successful_build_uses_managed_tag_labels_and_context() {
 
     let created = response_json(create_application(state.clone(), "rust").await).await;
     let application_id = application_id(&created);
-    let ready = wait_for_status(&state, application_id, "image_ready").await;
+    let ready = wait_for_status(&state, application_id, "running").await;
 
     assert_eq!(ready["error"], Value::Null);
     let request = requests
@@ -173,6 +177,11 @@ async fn successful_build_uses_managed_tag_labels_and_context() {
         "com.izyploy.application.id".to_owned(),
         application_id.to_string()
     )));
+    assert!(
+        request
+            .labels
+            .contains(&("com.izyploy.resource.kind".to_owned(), "image".to_owned()))
+    );
 
     let logs = deployment_logs(&state, application_id).await;
     assert!(logs.iter().any(|(stage, _, message)| {
@@ -183,6 +192,167 @@ async fn successful_build_uses_managed_tag_labels_and_context() {
             stage == "build" && message.contains("Docker image ready")
         })
     );
+}
+
+#[tokio::test]
+async fn successful_runtime_persists_port_url_limits_and_labels() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let run_requests = Arc::new(Mutex::new(Vec::new()));
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::recording_runtime(run_requests.clone()),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    let running = wait_for_status(&state, application_id, "running").await;
+
+    assert_eq!(running["host_port"], 49152);
+    assert_eq!(running["url"], "http://127.0.0.1:49152");
+    let request = run_requests
+        .lock()
+        .expect("run requests should be readable")
+        .first()
+        .expect("one container run should have been requested")
+        .clone();
+    assert_eq!(
+        request.container_name,
+        format!("izyploy-app-{application_id}")
+    );
+    assert_eq!(
+        request.image_tag,
+        format!("izyploy/application:{application_id}")
+    );
+    assert_eq!(request.container_port, 8080);
+    assert_eq!(
+        request.environment,
+        vec![("PORT".to_owned(), "8080".to_owned())]
+    );
+    assert_eq!(request.limits.cpus, "1");
+    assert_eq!(request.limits.memory, "512m");
+    assert_eq!(request.limits.pids, 256);
+    assert!(request.labels.contains(&(
+        "com.izyploy.resource.kind".to_owned(),
+        "container".to_owned()
+    )));
+
+    let logs = deployment_logs(&state, application_id).await;
+    assert!(logs.iter().any(|(stage, _, message)| {
+        stage == "runtime" && message.contains("starting Docker container")
+    }));
+    assert!(logs.iter().any(|(stage, _, message)| {
+        stage == "runtime" && message.contains("application running")
+    }));
+}
+
+#[tokio::test]
+async fn container_start_failure_transitions_to_failed_and_captures_stderr() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::runtime_failing(),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    let failed = wait_for_status(&state, application_id, "failed").await;
+
+    assert!(
+        failed["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("exit code 125"))
+    );
+    let logs = deployment_logs(&state, application_id).await;
+    assert!(logs.iter().any(|(stage, stream, message)| {
+        stage == "runtime" && stream == "stderr" && message.contains("container could not start")
+    }));
+}
+
+#[tokio::test]
+async fn missing_dynamic_host_port_transitions_to_failed() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::missing_host_port(),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    let failed = wait_for_status(&state, application_id, "failed").await;
+
+    assert!(
+        failed["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("did not publish"))
+    );
+}
+
+#[tokio::test]
+async fn readiness_timeout_transitions_to_failed_and_captures_container_logs() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state_with_runtime(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::successful(Arc::new(Mutex::new(Vec::new()))),
+        FakeReadinessProbe::timeout(),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    let failed = wait_for_status(&state, application_id, "failed").await;
+
+    assert!(
+        failed["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("readiness failed"))
+    );
+    let logs = deployment_logs(&state, application_id).await;
+    assert!(logs.iter().any(|(stage, stream, message)| {
+        stage == "runtime" && stream == "stdout" && message.contains("application started")
+    }));
+}
+
+#[tokio::test]
+async fn deployment_permit_remains_held_during_readiness() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let readiness_started = Arc::new(Notify::new());
+    let release_readiness = Arc::new(Notify::new());
+    let state = test_state_with_runtime(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::successful(Arc::new(Mutex::new(Vec::new()))),
+        FakeReadinessProbe::blocking_ready(readiness_started.clone(), release_readiness.clone()),
+    )
+    .await;
+
+    let first = response_json(create_application(state.clone(), "rust").await).await;
+    let first_id = application_id(&first);
+    time::timeout(Duration::from_secs(1), readiness_started.notified())
+        .await
+        .expect("first readiness check should start");
+    wait_for_status(&state, first_id, "starting").await;
+
+    let second = response_json(create_application(state.clone(), "rust").await).await;
+    let second_id = application_id(&second);
+    assert_eq!(
+        application_by_id(&state, second_id).await["status"],
+        "queued"
+    );
+
+    release_readiness.notify_one();
+    wait_for_status(&state, first_id, "running").await;
+    time::timeout(Duration::from_secs(1), readiness_started.notified())
+        .await
+        .expect("second readiness check should start after the first completes");
+    release_readiness.notify_one();
+    wait_for_status(&state, second_id, "running").await;
 }
 
 #[tokio::test]
@@ -334,6 +504,9 @@ enum FakeOutcome {
 struct FakeDockerClient {
     outcome: DockerOutcome,
     requests: Arc<Mutex<Vec<BuildRequest>>>,
+    run_outcome: RuntimeOutcome,
+    run_requests: Arc<Mutex<Vec<RunContainerRequest>>>,
+    host_port: Option<u16>,
     started: Option<Arc<Notify>>,
     release: Option<Arc<Notify>>,
 }
@@ -343,6 +516,9 @@ impl FakeDockerClient {
         Self {
             outcome: DockerOutcome::Success,
             requests,
+            run_outcome: RuntimeOutcome::Success,
+            run_requests: Arc::new(Mutex::new(Vec::new())),
+            host_port: Some(49152),
             started: None,
             release: None,
         }
@@ -352,6 +528,9 @@ impl FakeDockerClient {
         Self {
             outcome: DockerOutcome::Failure,
             requests: Arc::new(Mutex::new(Vec::new())),
+            run_outcome: RuntimeOutcome::Success,
+            run_requests: Arc::new(Mutex::new(Vec::new())),
+            host_port: Some(49152),
             started: None,
             release: None,
         }
@@ -361,8 +540,47 @@ impl FakeDockerClient {
         Self {
             outcome: DockerOutcome::Success,
             requests: Arc::new(Mutex::new(Vec::new())),
+            run_outcome: RuntimeOutcome::Success,
+            run_requests: Arc::new(Mutex::new(Vec::new())),
+            host_port: Some(49152),
             started: Some(started),
             release: Some(release),
+        }
+    }
+
+    fn runtime_failing() -> Self {
+        Self {
+            outcome: DockerOutcome::Success,
+            requests: Arc::new(Mutex::new(Vec::new())),
+            run_outcome: RuntimeOutcome::Failure,
+            run_requests: Arc::new(Mutex::new(Vec::new())),
+            host_port: Some(49152),
+            started: None,
+            release: None,
+        }
+    }
+
+    fn recording_runtime(run_requests: Arc<Mutex<Vec<RunContainerRequest>>>) -> Self {
+        Self {
+            outcome: DockerOutcome::Success,
+            requests: Arc::new(Mutex::new(Vec::new())),
+            run_outcome: RuntimeOutcome::Success,
+            run_requests,
+            host_port: Some(49152),
+            started: None,
+            release: None,
+        }
+    }
+
+    fn missing_host_port() -> Self {
+        Self {
+            outcome: DockerOutcome::Success,
+            requests: Arc::new(Mutex::new(Vec::new())),
+            run_outcome: RuntimeOutcome::Success,
+            run_requests: Arc::new(Mutex::new(Vec::new())),
+            host_port: None,
+            started: None,
+            release: None,
         }
     }
 }
@@ -401,12 +619,133 @@ impl DockerClient for FakeDockerClient {
             })
         })
     }
+
+    fn run_container(&self, request: RunContainerRequest) -> CommandFuture {
+        self.run_requests
+            .lock()
+            .expect("run requests should be writable")
+            .push(request);
+        let outcome = self.run_outcome;
+
+        Box::pin(async move {
+            Ok(match outcome {
+                RuntimeOutcome::Success => CommandOutput {
+                    success: true,
+                    exit_code: Some(0),
+                    stdout: "container-id".to_owned(),
+                    stderr: String::new(),
+                },
+                RuntimeOutcome::Failure => CommandOutput {
+                    success: false,
+                    exit_code: Some(125),
+                    stdout: String::new(),
+                    stderr: "container could not start".to_owned(),
+                },
+            })
+        })
+    }
+
+    fn inspect_host_port(&self, _request: PortRequest) -> PortFuture {
+        let host_port = self.host_port;
+        Box::pin(async move {
+            Ok(PortOutput {
+                success: true,
+                exit_code: Some(0),
+                host_port,
+                stdout: host_port
+                    .map(|port| format!("127.0.0.1:{port}"))
+                    .unwrap_or_default(),
+                stderr: String::new(),
+            })
+        })
+    }
+
+    fn container_logs(&self, _container_name: String) -> CommandFuture {
+        Box::pin(async {
+            Ok(CommandOutput {
+                success: true,
+                exit_code: Some(0),
+                stdout: "application started".to_owned(),
+                stderr: String::new(),
+            })
+        })
+    }
 }
 
 #[derive(Clone, Copy)]
 enum DockerOutcome {
     Success,
     Failure,
+}
+
+#[derive(Clone, Copy)]
+enum RuntimeOutcome {
+    Success,
+    Failure,
+}
+
+#[derive(Clone)]
+struct FakeReadinessProbe {
+    outcome: ReadinessOutcome,
+    started: Option<Arc<Notify>>,
+    release: Option<Arc<Notify>>,
+}
+
+impl FakeReadinessProbe {
+    fn ready() -> Self {
+        Self {
+            outcome: ReadinessOutcome::Ready,
+            started: None,
+            release: None,
+        }
+    }
+
+    fn timeout() -> Self {
+        Self {
+            outcome: ReadinessOutcome::Timeout,
+            started: None,
+            release: None,
+        }
+    }
+
+    fn blocking_ready(started: Arc<Notify>, release: Arc<Notify>) -> Self {
+        Self {
+            outcome: ReadinessOutcome::Ready,
+            started: Some(started),
+            release: Some(release),
+        }
+    }
+}
+
+impl ReadinessProbe for FakeReadinessProbe {
+    fn wait_until_ready(&self, _host_port: u16, _timeout: Duration) -> ReadinessFuture {
+        let outcome = self.outcome;
+        let started = self.started.clone();
+        let release = self.release.clone();
+
+        Box::pin(async move {
+            if let Some(started) = started {
+                started.notify_one();
+            }
+            if let Some(release) = release {
+                release.notified().await;
+            }
+
+            match outcome {
+                ReadinessOutcome::Ready => Ok(()),
+                ReadinessOutcome::Timeout => Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "application did not become ready",
+                )),
+            }
+        })
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ReadinessOutcome {
+    Ready,
+    Timeout,
 }
 
 async fn fake_clone(request: CloneRequest, outcome: FakeOutcome) -> io::Result<CloneOutput> {
@@ -474,6 +813,21 @@ async fn test_state_with_docker(
     git_client: FakeGitClient,
     docker_client: FakeDockerClient,
 ) -> AppState {
+    test_state_with_runtime(
+        temporary_directory,
+        git_client,
+        docker_client,
+        FakeReadinessProbe::ready(),
+    )
+    .await
+}
+
+async fn test_state_with_runtime(
+    temporary_directory: &TempDir,
+    git_client: FakeGitClient,
+    docker_client: FakeDockerClient,
+    readiness_probe: FakeReadinessProbe,
+) -> AppState {
     let database = database::connect(&format!(
         "sqlite://{}",
         temporary_directory.path().join("izyploy.db").display()
@@ -486,6 +840,7 @@ async fn test_state_with_docker(
         temporary_directory.path().join("workspaces"),
         Arc::new(git_client),
         Arc::new(docker_client),
+        Arc::new(readiness_probe),
     )
 }
 

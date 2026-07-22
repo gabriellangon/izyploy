@@ -128,6 +128,33 @@ pub(crate) async fn mark_failed(
     Ok(())
 }
 
+pub(crate) async fn mark_running(
+    database: &SqlitePool,
+    id: Uuid,
+    host_port: u16,
+    url: &str,
+) -> Result<(), sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE applications
+         SET status = 'running', host_port = ?, url = ?, error = NULL, updated_at = ?
+         WHERE id = ? AND status = 'starting'",
+    )
+    .bind(i64::from(host_port))
+    .bind(url)
+    .bind(Utc::now().to_rfc3339())
+    .bind(id.to_string())
+    .execute(database)
+    .await?;
+
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(sqlx::Error::Protocol(format!(
+            "application {id} did not transition from starting to running"
+        )))
+    }
+}
+
 pub(crate) async fn append_log(
     database: &SqlitePool,
     application_id: Uuid,

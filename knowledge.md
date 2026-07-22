@@ -219,10 +219,30 @@ Create one when a milestone introduces application code, infrastructure, or a si
   - Dockerfiles are trusted operator-controlled code because a Docker build can execute arbitrary instructions with access to the host Docker daemon;
   - `docker` must be installed, available on `PATH`, and connected to the host engine.
 
+### D-019 — Local-first milestone delivery
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: after a milestone branch is created, its implementation, tests, real verification, and learning documentation are completed locally before the result is presented for explicit user validation. The milestone is then closed, merged into `main`, and all branches are published together. A milestone-start branch does not need to be pushed separately.
+- Reason: this keeps remote history aligned with reviewable, complete learning increments and avoids publishing an empty milestone shell before its implementation exists.
+- Constraint: the milestone 6 branch had already been published with its start-only commit before this workflow was clarified; subsequent milestone 6 implementation remains local until validation.
+
+### D-020 — Initial managed container runtime
+
+- Date: 2026-07-22
+- Status: proposed — pending milestone 6 validation
+- Decision: Izyploy starts one container named `izyploy-app-<application-id>` from the deterministic application image. It supplies `PORT=<container-port>`, limits the container to 1 CPU, 512 MiB of memory, and 256 processes, and asks Docker to publish the application port dynamically on `127.0.0.1`. Managed resources carry application ownership and resource-kind labels. Izyploy discovers the assigned host port, waits up to 30 seconds for a TCP connection, stores `host_port` and `http://127.0.0.1:<host-port>`, then transitions `starting` to `running`.
+- Reason: Docker-selected host ports prevent allocation races, loopback binding avoids unintended network exposure, resource limits constrain accidental host exhaustion, and a generic TCP probe avoids imposing an application-specific health route in the first runtime contract.
+- Constraints:
+  - the single process-local deployment permit is held through readiness success or failure;
+  - container output is captured once during startup rather than streamed continuously;
+  - there is no ongoing health monitor or automatic restart policy yet;
+  - a container that starts but fails readiness can remain until lifecycle cleanup is implemented in milestone 7;
+  - public routing, TLS, and subdomains remain deferred to milestone 10.
+
 ## Open decisions
 
-- Define the milestone 6 runtime contract: exact CPU, memory, and process limits; deterministic container naming and labels; loopback-only dynamic port publication; and how readiness is verified before declaring an application `running`.
-- Confirm that the existing single-deployment permit extends through container creation, port discovery, and readiness verification.
+- Accept or revise D-020 during the milestone 6 review.
 
 ## Current state
 
@@ -234,7 +254,7 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Milestone 5 validation: explicitly accepted on 2026-07-22 after the end-to-end deployment permit, managed image tags and labels, `image_ready` state, persisted build logs, automated tests, and real Docker build were reviewed.
 - Current milestone: milestone 6 — application start and exposure, started on 2026-07-22 and in progress.
 - Current branch: `feat/milestone-6-application-runtime`.
-- Application code: one serialized background deployment pipeline now prepares Git sources and builds labeled Docker images through `source_ready`, `building`, `image_ready`, and `failed` outcomes.
+- Application code: one serialized background deployment pipeline now prepares Git sources, builds labeled images, starts resource-limited containers, discovers loopback ports, verifies TCP readiness, and persists `running`, `host_port`, and `url` outcomes.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -246,4 +266,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: agree on the initial container runtime and readiness contract before implementing startup automation.
+- Next action: review the milestone 6 runtime contract and complete API-to-HTTP flow, then obtain explicit validation before integration and publication.
