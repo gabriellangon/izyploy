@@ -240,6 +240,30 @@ Create one when a milestone introduces application code, infrastructure, or a si
   - a container that starts but fails readiness can remain until lifecycle cleanup is implemented in milestone 7;
   - public routing, TLS, and subdomains remain deferred to milestone 10.
 
+### D-021 — Deployment logs and idempotent deletion
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: `GET /applications/{id}/logs` returns persisted deployment logs oldest first and returns `404` when the application does not exist. `DELETE /applications/{id}` returns `204` for both existing and already-absent applications. Deletion acquires the same single-deployment permit, moves an existing application to `deleting`, removes its deterministic container and image, removes its UUID workspace, then deletes the application record and its cascading logs. Docker and filesystem resources that are already absent are treated as successful cleanup.
+- Reason: ordered logs make the deployment diagnosable, the shared permit prevents cleanup from racing active deployment work, and idempotent deletion lets clients safely retry after uncertain network outcomes.
+- Constraints:
+  - the synchronous delete request waits for any active deployment and for cleanup commands to finish;
+  - successful deletion removes the application logs with the database record;
+  - cleanup can be partially complete if a later resource fails; the application is retained as `failed` for diagnosis and retry;
+  - the MVP recognizes Docker's stable `No such container` and `No such image` errors as absence;
+  - there is no global orphan-resource scan yet.
+
+### D-022 — Safe restart recovery
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: when production `AppState` starts, applications left in `queued`, `cloning`, `source_ready`, `building`, `image_ready`, `starting`, or `deleting` are marked `failed` with a recovery log. Izyploy does not automatically resume them. Existing `running` and `failed` records are left unchanged.
+- Reason: process-local Tokio tasks and the semaphore disappear on restart. Marking transient work as interrupted is truthful and avoids duplicating Git, Docker build, or container operations without a durable job protocol.
+- Constraints:
+  - partial Docker resources and workspaces remain available for explicit idempotent deletion;
+  - `running` records are not yet reconciled against the actual Docker engine;
+  - automatic retry, durable jobs, and distributed recovery remain deferred.
+
 ## Open decisions
 
 - No technical decision is currently open.
@@ -247,15 +271,16 @@ Create one when a milestone introduces application code, infrastructure, or a si
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build; milestone 6 — application start and exposure.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build; milestone 6 — application start and exposure; milestone 7 — logs, deletion, and recovery.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
 - Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
 - Milestone 5 validation: explicitly accepted on 2026-07-22 after the end-to-end deployment permit, managed image tags and labels, `image_ready` state, persisted build logs, automated tests, and real Docker build were reviewed.
 - Milestone 6 validation: explicitly accepted on 2026-07-22 after resource-limited container startup, dynamic loopback port publication, readiness verification, persisted URL, automated tests, and the complete API-to-HTTP flow were reviewed.
-- Current milestone: none; milestone 6 is complete and milestone 7 has not started.
-- Current branch: `main` after milestone 6 integration.
-- Application code: one serialized background deployment pipeline now prepares Git sources, builds labeled images, starts resource-limited containers, discovers loopback ports, verifies TCP readiness, and persists `running`, `host_port`, and `url` outcomes.
+- Milestone 7 validation: explicitly accepted on 2026-07-22 after ordered HTTP logs, idempotent cleanup, missing-resource tolerance, failed-cleanup preservation, restart recovery, automated tests, and the real create-to-delete lifecycle were reviewed.
+- Current milestone: none; milestone 7 is complete and milestone 8 has not started.
+- Current branch: `main` after milestone 7 integration.
+- Application code: the complete deployment pipeline is observable through HTTP logs, deletable through serialized idempotent cleanup, and protected against misleading transient states after an Izyploy restart.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -267,4 +292,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: start milestone 7 locally and keep all implementation uncommitted and unpublished until explicit validation.
+- Next action: start milestone 8 locally and keep its implementation uncommitted and unpublished until explicit validation.

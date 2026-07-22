@@ -356,6 +356,178 @@ async fn deployment_permit_remains_held_during_readiness() {
 }
 
 #[tokio::test]
+async fn deployment_logs_are_exposed_in_persisted_order() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    wait_for_status(&state, application_id, "running").await;
+
+    let response = send_empty(
+        app(state.clone()),
+        Method::GET,
+        &format!("/applications/{application_id}/logs"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let logs = response_json(response).await;
+    let logs = logs.as_array().expect("logs response should be an array");
+    assert!(!logs.is_empty());
+    assert_eq!(logs[0]["stage"], "source");
+    assert!(logs.iter().any(|log| log["stage"] == "build"));
+    assert!(logs.iter().any(|log| log["stage"] == "runtime"));
+    assert!(logs.windows(2).all(|pair| {
+        pair[0]["id"].as_i64().expect("log id should be an integer")
+            < pair[1]["id"].as_i64().expect("log id should be an integer")
+    }));
+}
+
+#[tokio::test]
+async fn deletion_removes_managed_resources_workspace_and_database_record() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let removed_resources = Arc::new(Mutex::new(Vec::new()));
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::recording_cleanup(removed_resources.clone()),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    wait_for_status(&state, application_id, "running").await;
+    let workspace = temporary_directory
+        .path()
+        .join("workspaces")
+        .join(application_id.to_string());
+    assert!(workspace.exists());
+
+    let delete_response = send_empty(
+        app(state.clone()),
+        Method::DELETE,
+        &format!("/applications/{application_id}"),
+    )
+    .await;
+    assert_eq!(delete_response.status(), StatusCode::NO_CONTENT);
+    assert!(!workspace.exists());
+    assert_eq!(
+        removed_resources
+            .lock()
+            .expect("removed resources should be readable")
+            .as_slice(),
+        [
+            format!("container:izyploy-app-{application_id}"),
+            format!("image:izyploy/application:{application_id}"),
+        ]
+    );
+
+    let get_response = send_empty(
+        app(state.clone()),
+        Method::GET,
+        &format!("/applications/{application_id}"),
+    )
+    .await;
+    assert_eq!(get_response.status(), StatusCode::NOT_FOUND);
+
+    let repeated_delete = send_empty(
+        app(state),
+        Method::DELETE,
+        &format!("/applications/{application_id}"),
+    )
+    .await;
+    assert_eq!(repeated_delete.status(), StatusCode::NO_CONTENT);
+}
+
+#[tokio::test]
+async fn deletion_tolerates_resources_that_are_already_absent() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::missing_cleanup_resources(),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    wait_for_status(&state, application_id, "running").await;
+
+    let response = send_empty(
+        app(state),
+        Method::DELETE,
+        &format!("/applications/{application_id}"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+}
+
+#[tokio::test]
+async fn cleanup_failure_preserves_application_as_failed_for_retry() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let state = test_state_with_docker(
+        &temporary_directory,
+        FakeGitClient::immediate(FakeOutcome::Success),
+        FakeDockerClient::failing_cleanup(),
+    )
+    .await;
+
+    let created = response_json(create_application(state.clone(), "rust").await).await;
+    let application_id = application_id(&created);
+    wait_for_status(&state, application_id, "running").await;
+
+    let response = send_empty(
+        app(state.clone()),
+        Method::DELETE,
+        &format!("/applications/{application_id}"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    let failed = application_by_id(&state, application_id).await;
+    assert_eq!(failed["status"], "failed");
+    assert!(
+        failed["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("cleanup failed"))
+    );
+}
+
+#[tokio::test]
+async fn startup_recovery_marks_interrupted_deployments_failed() {
+    let temporary_directory = TempDir::new().expect("temporary directory should be created");
+    let database = database::connect(&format!(
+        "sqlite://{}",
+        temporary_directory.path().join("izyploy.db").display()
+    ))
+    .await
+    .expect("test database should connect and migrate");
+    let initial_state = AppState::without_deployment_preparation(database.clone());
+    let created = response_json(create_application(initial_state, "rust").await).await;
+    let application_id = application_id(&created);
+    assert_eq!(created["status"], "queued");
+
+    let recovered_state = AppState::new(database, temporary_directory.path().join("workspaces"))
+        .await
+        .expect("application state should recover interrupted deployments");
+    let failed = application_by_id(&recovered_state, application_id).await;
+    assert_eq!(failed["status"], "failed");
+    assert!(
+        failed["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("interrupted"))
+    );
+
+    let logs = deployment_logs(&recovered_state, application_id).await;
+    assert!(logs.iter().any(|(stage, _, message)| {
+        stage == "recovery" && message.contains("status was queued")
+    }));
+}
+
+#[tokio::test]
 async fn docker_build_failure_transitions_to_failed_and_captures_stderr() {
     let temporary_directory = TempDir::new().expect("temporary directory should be created");
     let state = test_state_with_docker(
@@ -507,6 +679,8 @@ struct FakeDockerClient {
     run_outcome: RuntimeOutcome,
     run_requests: Arc<Mutex<Vec<RunContainerRequest>>>,
     host_port: Option<u16>,
+    cleanup_outcome: CleanupOutcome,
+    removed_resources: Arc<Mutex<Vec<String>>>,
     started: Option<Arc<Notify>>,
     release: Option<Arc<Notify>>,
 }
@@ -519,6 +693,8 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Success,
             run_requests: Arc::new(Mutex::new(Vec::new())),
             host_port: Some(49152),
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: None,
             release: None,
         }
@@ -531,6 +707,8 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Success,
             run_requests: Arc::new(Mutex::new(Vec::new())),
             host_port: Some(49152),
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: None,
             release: None,
         }
@@ -543,6 +721,8 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Success,
             run_requests: Arc::new(Mutex::new(Vec::new())),
             host_port: Some(49152),
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: Some(started),
             release: Some(release),
         }
@@ -555,6 +735,8 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Failure,
             run_requests: Arc::new(Mutex::new(Vec::new())),
             host_port: Some(49152),
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: None,
             release: None,
         }
@@ -567,6 +749,8 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Success,
             run_requests,
             host_port: Some(49152),
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: None,
             release: None,
         }
@@ -579,9 +763,29 @@ impl FakeDockerClient {
             run_outcome: RuntimeOutcome::Success,
             run_requests: Arc::new(Mutex::new(Vec::new())),
             host_port: None,
+            cleanup_outcome: CleanupOutcome::Success,
+            removed_resources: Arc::new(Mutex::new(Vec::new())),
             started: None,
             release: None,
         }
+    }
+
+    fn recording_cleanup(removed_resources: Arc<Mutex<Vec<String>>>) -> Self {
+        let mut client = Self::successful(Arc::new(Mutex::new(Vec::new())));
+        client.removed_resources = removed_resources;
+        client
+    }
+
+    fn missing_cleanup_resources() -> Self {
+        let mut client = Self::successful(Arc::new(Mutex::new(Vec::new())));
+        client.cleanup_outcome = CleanupOutcome::Missing;
+        client
+    }
+
+    fn failing_cleanup() -> Self {
+        let mut client = Self::successful(Arc::new(Mutex::new(Vec::new())));
+        client.cleanup_outcome = CleanupOutcome::Failure;
+        client
     }
 }
 
@@ -670,6 +874,49 @@ impl DockerClient for FakeDockerClient {
             })
         })
     }
+
+    fn remove_container(&self, container_name: String) -> CommandFuture {
+        self.removed_resources
+            .lock()
+            .expect("removed resources should be writable")
+            .push(format!("container:{container_name}"));
+        let outcome = self.cleanup_outcome;
+
+        Box::pin(async move { Ok(cleanup_output(outcome, "container")) })
+    }
+
+    fn remove_image(&self, image_tag: String) -> CommandFuture {
+        self.removed_resources
+            .lock()
+            .expect("removed resources should be writable")
+            .push(format!("image:{image_tag}"));
+        let outcome = self.cleanup_outcome;
+
+        Box::pin(async move { Ok(cleanup_output(outcome, "image")) })
+    }
+}
+
+fn cleanup_output(outcome: CleanupOutcome, resource: &str) -> CommandOutput {
+    match outcome {
+        CleanupOutcome::Success => CommandOutput {
+            success: true,
+            exit_code: Some(0),
+            stdout: format!("removed {resource}"),
+            stderr: String::new(),
+        },
+        CleanupOutcome::Missing => CommandOutput {
+            success: false,
+            exit_code: Some(1),
+            stdout: String::new(),
+            stderr: format!("Error: No such {resource}"),
+        },
+        CleanupOutcome::Failure => CommandOutput {
+            success: false,
+            exit_code: Some(1),
+            stdout: String::new(),
+            stderr: format!("cannot remove {resource}"),
+        },
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -681,6 +928,13 @@ enum DockerOutcome {
 #[derive(Clone, Copy)]
 enum RuntimeOutcome {
     Success,
+    Failure,
+}
+
+#[derive(Clone, Copy)]
+enum CleanupOutcome {
+    Success,
+    Missing,
     Failure,
 }
 

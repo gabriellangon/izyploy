@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use sqlx::{Row, SqlitePool, sqlite::SqliteRow};
 use uuid::Uuid;
 
-use super::model::{Application, ApplicationStatus, NewApplication};
+use super::model::{Application, ApplicationStatus, DeploymentLog, NewApplication};
 
 pub(crate) async fn create(
     database: &SqlitePool,
@@ -134,6 +134,7 @@ pub(crate) async fn mark_running(
     host_port: u16,
     url: &str,
 ) -> Result<(), sqlx::Error> {
+    let mut transaction = database.begin().await?;
     let result = sqlx::query(
         "UPDATE applications
          SET status = 'running', host_port = ?, url = ?, error = NULL, updated_at = ?
@@ -143,10 +144,20 @@ pub(crate) async fn mark_running(
     .bind(url)
     .bind(Utc::now().to_rfc3339())
     .bind(id.to_string())
-    .execute(database)
+    .execute(&mut *transaction)
     .await?;
 
     if result.rows_affected() == 1 {
+        sqlx::query(
+            "INSERT INTO deployment_logs (application_id, stage, stream, message, created_at)
+             VALUES (?, 'runtime', 'system', ?, ?)",
+        )
+        .bind(id.to_string())
+        .bind(format!("application running at {url}"))
+        .bind(Utc::now().to_rfc3339())
+        .execute(&mut *transaction)
+        .await?;
+        transaction.commit().await?;
         Ok(())
     } else {
         Err(sqlx::Error::Protocol(format!(
@@ -177,6 +188,91 @@ pub(crate) async fn append_log(
     Ok(())
 }
 
+pub(crate) async fn list_logs(
+    database: &SqlitePool,
+    application_id: Uuid,
+) -> Result<Vec<DeploymentLog>, sqlx::Error> {
+    let rows = sqlx::query(
+        "SELECT id, application_id, stage, stream, message, created_at
+         FROM deployment_logs
+         WHERE application_id = ?
+         ORDER BY id ASC",
+    )
+    .bind(application_id.to_string())
+    .fetch_all(database)
+    .await?;
+
+    rows.into_iter().map(deployment_log_from_row).collect()
+}
+
+pub(crate) async fn mark_deleting(database: &SqlitePool, id: Uuid) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        "UPDATE applications
+         SET status = 'deleting', error = NULL, updated_at = ?
+         WHERE id = ?",
+    )
+    .bind(Utc::now().to_rfc3339())
+    .bind(id.to_string())
+    .execute(database)
+    .await?;
+
+    Ok(result.rows_affected() == 1)
+}
+
+pub(crate) async fn delete(database: &SqlitePool, id: Uuid) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM applications WHERE id = ?")
+        .bind(id.to_string())
+        .execute(database)
+        .await?;
+
+    Ok(())
+}
+
+pub(crate) async fn recover_interrupted(database: &SqlitePool) -> Result<u64, sqlx::Error> {
+    let mut transaction = database.begin().await?;
+    let now = Utc::now().to_rfc3339();
+    let interrupted_statuses = [
+        "queued",
+        "cloning",
+        "source_ready",
+        "building",
+        "image_ready",
+        "starting",
+        "deleting",
+    ];
+
+    for status in interrupted_statuses {
+        sqlx::query(
+            "INSERT INTO deployment_logs (application_id, stage, stream, message, created_at)
+             SELECT id, 'recovery', 'system', ?, ?
+             FROM applications
+             WHERE status = ?",
+        )
+        .bind(format!(
+            "deployment interrupted by Izyploy restart while status was {status}"
+        ))
+        .bind(&now)
+        .bind(status)
+        .execute(&mut *transaction)
+        .await?;
+    }
+
+    let result = sqlx::query(
+        "UPDATE applications
+         SET status = 'failed', error = 'deployment interrupted by Izyploy restart', updated_at = ?
+         WHERE status IN (
+             'queued', 'cloning', 'source_ready', 'building',
+             'image_ready', 'starting', 'deleting'
+         )",
+    )
+    .bind(now)
+    .execute(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+
+    Ok(result.rows_affected())
+}
+
 fn application_from_row(row: SqliteRow) -> Result<Application, sqlx::Error> {
     let id = Uuid::parse_str(&row.try_get::<String, _>("id")?)
         .map_err(|error| sqlx::Error::Decode(Box::new(error)))?;
@@ -203,6 +299,21 @@ fn application_from_row(row: SqliteRow) -> Result<Application, sqlx::Error> {
         error: row.try_get("error")?,
         created_at,
         updated_at,
+    })
+}
+
+fn deployment_log_from_row(row: SqliteRow) -> Result<DeploymentLog, sqlx::Error> {
+    let application_id = Uuid::parse_str(&row.try_get::<String, _>("application_id")?)
+        .map_err(|error| sqlx::Error::Decode(Box::new(error)))?;
+    let created_at = decode_timestamp(&row.try_get::<String, _>("created_at")?)?;
+
+    Ok(DeploymentLog {
+        id: row.try_get("id")?,
+        application_id,
+        stage: row.try_get("stage")?,
+        stream: row.try_get("stream")?,
+        message: row.try_get("message")?,
+        created_at,
     })
 }
 

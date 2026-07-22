@@ -11,6 +11,8 @@ pub trait DockerClient: Send + Sync {
     fn run_container(&self, request: RunContainerRequest) -> CommandFuture;
     fn inspect_host_port(&self, request: PortRequest) -> PortFuture;
     fn container_logs(&self, container_name: String) -> CommandFuture;
+    fn remove_container(&self, container_name: String) -> CommandFuture;
+    fn remove_image(&self, image_tag: String) -> CommandFuture;
 }
 
 #[derive(Debug, Clone)]
@@ -163,6 +165,37 @@ impl DockerClient for CommandDockerClient {
                 .arg("logs")
                 .arg("--")
                 .arg(container_name)
+                .kill_on_drop(true)
+                .output()
+                .await?;
+
+            Ok(command_output(output))
+        })
+    }
+
+    fn remove_container(&self, container_name: String) -> CommandFuture {
+        Box::pin(async move {
+            let output = Command::new("docker")
+                .arg("rm")
+                .arg("--force")
+                .arg("--")
+                .arg(container_name)
+                .kill_on_drop(true)
+                .output()
+                .await?;
+
+            Ok(command_output(output))
+        })
+    }
+
+    fn remove_image(&self, image_tag: String) -> CommandFuture {
+        Box::pin(async move {
+            let output = Command::new("docker")
+                .arg("image")
+                .arg("rm")
+                .arg("--force")
+                .arg("--")
+                .arg(image_tag)
                 .kill_on_drop(true)
                 .output()
                 .await?;

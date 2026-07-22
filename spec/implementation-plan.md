@@ -4,7 +4,7 @@
 
 Last updated: 2026-07-22
 
-Current milestone: **None — Milestone 6 completed; Milestone 7 not started**
+Current milestone: **None — Milestone 7 completed; Milestone 8 not started**
 
 Legend:
 
@@ -71,7 +71,16 @@ Legend:
   - [x] Transition `image_ready` applications through `starting` to `running`.
   - [x] Test successful startup, runtime failure, and port discovery.
   - [x] Verify the complete API-to-HTTP flow and document the milestone.
-- [ ] **Milestone 7 — Logs, deletion, and recovery**
+- [x] **Milestone 7 — Logs, deletion, and recovery**
+  - [x] Expose persisted deployment logs in chronological order.
+  - [x] Implement idempotent application deletion.
+  - [x] Serialize deletion with active deployment work.
+  - [x] Remove the managed container, image, and workspace.
+  - [x] Tolerate Docker resources and workspaces that are already absent.
+  - [x] Preserve failed cleanup state for diagnosis and retry.
+  - [x] Mark interrupted startup states as failed after an Izyploy restart.
+  - [x] Test logs, repeated deletion, cleanup failures, and recovery.
+  - [x] Verify the real create-to-delete lifecycle and document the milestone.
 - [ ] **Milestone 8 — Containerize Izyploy**
 - [ ] **Milestone 9 — Minimal web interface**
 - [ ] **Milestone 10 — Traefik and subdomains**
@@ -277,6 +286,8 @@ Travail :
 - définir le comportement après redémarrage d'Izyploy.
 
 Livrable : un déploiement peut être diagnostiqué puis entièrement supprimé.
+
+Document d'apprentissage : [`docs/milestones/milestone-07-lifecycle-and-recovery.md`](../docs/milestones/milestone-07-lifecycle-and-recovery.md).
 
 Validation : répéter création et suppression plusieurs fois sans laisser de ressources orphelines.
 

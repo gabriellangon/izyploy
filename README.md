@@ -110,7 +110,7 @@ DELETE /applications/{id}
 
 The product specification and implementation roadmap are established. The complete Docker lifecycle has been verified manually with the PHP example application: image build, container start, port publication, HTTP checks, log and metadata inspection, and resource cleanup.
 
-Milestone 6 is complete. One serialized Tokio background pipeline now clones trusted GitHub sources, builds labeled images, starts resource-limited containers, assigns loopback-only dynamic ports, verifies TCP readiness, and persists a locally accessible application URL.
+Milestone 7 is complete. Deployments are now observable through an HTTP logs endpoint, removable through serialized idempotent cleanup, and marked failed with recovery context when transient work is interrupted by an Izyploy restart.
 
 ## Security boundary
 

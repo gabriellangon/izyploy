@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{AppState, error::ApiError};
 
 use super::{
-    model::{Application, CreateApplicationRequest},
+    model::{Application, CreateApplicationRequest, DeploymentLog},
     repository,
     validation::validate,
 };
@@ -17,7 +17,11 @@ use super::{
 pub(crate) fn router() -> Router<AppState> {
     Router::new()
         .route("/applications", post(create).get(list))
-        .route("/applications/{id}", get(find_by_id))
+        .route(
+            "/applications/{id}",
+            get(find_by_id).delete(delete_application),
+        )
+        .route("/applications/{id}/logs", get(list_logs))
 }
 
 async fn create(
@@ -47,10 +51,43 @@ async fn find_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<Application>, ApiError> {
-    let id = Uuid::parse_str(&id).map_err(|_| ApiError::InvalidApplicationId)?;
+    let id = parse_application_id(&id)?;
     let application = repository::find_by_id(state.database(), id)
         .await?
         .ok_or(ApiError::ApplicationNotFound)?;
 
     Ok(Json(application))
+}
+
+async fn list_logs(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Vec<DeploymentLog>>, ApiError> {
+    let id = parse_application_id(&id)?;
+    repository::find_by_id(state.database(), id)
+        .await?
+        .ok_or(ApiError::ApplicationNotFound)?;
+    let logs = repository::list_logs(state.database(), id).await?;
+
+    Ok(Json(logs))
+}
+
+async fn delete_application(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let id = parse_application_id(&id)?;
+    let deployment_preparer = state
+        .deployment_preparer()
+        .ok_or_else(|| ApiError::internal("deployment lifecycle is unavailable"))?;
+    deployment_preparer
+        .delete(id)
+        .await
+        .map_err(ApiError::internal)?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn parse_application_id(id: &str) -> Result<Uuid, ApiError> {
+    Uuid::parse_str(id).map_err(|_| ApiError::InvalidApplicationId)
 }
