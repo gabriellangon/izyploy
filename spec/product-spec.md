@@ -120,6 +120,16 @@ Navigateur ou client HTTP
 
 À terme, Izyploy sera lui-même dockerisé. Son worker accédera au moteur Docker de l'hôte par le socket `/var/run/docker.sock`. Les applications créées seront des conteneurs frères, pas des conteneurs imbriqués.
 
+The initial containerized control plane uses:
+
+- `BIND_ADDRESS=0.0.0.0:3000` inside the Izyploy container;
+- host publication restricted to `127.0.0.1:3000`;
+- `RUNTIME_HOST=host.docker.internal` for readiness checks against host-published application ports;
+- a persistent `/data` volume for SQLite and Git workspaces;
+- the host Docker socket mounted at `/var/run/docker.sock`.
+
+The Docker socket is an administrative host capability and is permitted only for the trusted single-operator MVP.
+
 Pendant les premières étapes, l'API pourra tourner directement sur la machine de développement afin de faciliter le débogage. Sa dockerisation sera une étape pédagogique distincte.
 
 ## 7. Sources et contexte de build

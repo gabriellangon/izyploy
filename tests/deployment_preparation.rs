@@ -510,9 +510,13 @@ async fn startup_recovery_marks_interrupted_deployments_failed() {
     let application_id = application_id(&created);
     assert_eq!(created["status"], "queued");
 
-    let recovered_state = AppState::new(database, temporary_directory.path().join("workspaces"))
-        .await
-        .expect("application state should recover interrupted deployments");
+    let recovered_state = AppState::new(
+        database,
+        temporary_directory.path().join("workspaces"),
+        "127.0.0.1".to_owned(),
+    )
+    .await
+    .expect("application state should recover interrupted deployments");
     let failed = application_by_id(&recovered_state, application_id).await;
     assert_eq!(failed["status"], "failed");
     assert!(

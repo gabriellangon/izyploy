@@ -44,8 +44,8 @@ Izyploy then:
 The deployment lifecycle uses explicit states:
 
 ```text
-queued → cloning → building → starting → running
-   └────────────── failure ──────────────→ failed
+queued → cloning → source_ready → building → image_ready → starting → running
+   └──────────────────── failure ─────────────────────────→ failed
 running → deleting
 ```
 
@@ -95,7 +95,25 @@ The API and orchestrator manage the desired application lifecycle. Docker builds
 
 Later runtime stages add a reverse proxy, public subdomains, HTTPS, redeployment, observability, distributed workers, an image registry, and a Kubernetes execution backend.
 
-## Planned API
+## Containerized run
+
+Build and start Izyploy with the host Docker Engine:
+
+```bash
+docker compose up --build --detach
+docker compose ps
+curl http://127.0.0.1:3000/health
+```
+
+SQLite and application workspaces are persisted in the `izyploy-data` volume. The API is exposed only on host loopback. If the Docker socket is not available at `/var/run/docker.sock`, set `DOCKER_SOCKET_PATH` to its actual host path before starting Compose.
+
+Stop Izyploy without deleting persistent data:
+
+```bash
+docker compose down
+```
+
+## API
 
 ```text
 GET    /health
@@ -110,13 +128,15 @@ DELETE /applications/{id}
 
 The product specification and implementation roadmap are established. The complete Docker lifecycle has been verified manually with the PHP example application: image build, container start, port publication, HTTP checks, log and metadata inspection, and resource cleanup.
 
-Milestone 7 is complete. Deployments are now observable through an HTTP logs endpoint, removable through serialized idempotent cleanup, and marked failed with recovery context when transient work is interrupted by an Izyploy restart.
+Milestone 8 is complete. Izyploy now runs through Compose, persists its data, and creates application containers as siblings through the host Docker socket.
 
 ## Security boundary
 
 Izyploy's initial Docker runtime is restricted to repositories controlled and trusted by the operator.
 
 Building a third-party `Dockerfile` and controlling the host Docker Engine are privileged operations. Docker alone is not a sufficient isolation boundary for hostile code, and the initial version must not be exposed as a public arbitrary-code execution service.
+
+Mounting `/var/run/docker.sock` gives the Izyploy container effectively administrative control over the host. The containerized MVP therefore remains restricted to a trusted operator and trusted repositories.
 
 ## Documentation
 
@@ -127,3 +147,7 @@ Building a third-party `Dockerfile` and controlling the host Docker Engine are p
 - [Milestone 02 — Rust API skeleton](docs/milestones/milestone-02-rust-api-skeleton.md)
 - [Milestone 03 — Application persistence](docs/milestones/milestone-03-application-persistence.md)
 - [Milestone 04 — Background Git clone](docs/milestones/milestone-04-background-git-clone.md)
+- [Milestone 05 — Docker image build](docs/milestones/milestone-05-docker-image-build.md)
+- [Milestone 06 — Application runtime](docs/milestones/milestone-06-application-runtime.md)
+- [Milestone 07 — Lifecycle and recovery](docs/milestones/milestone-07-lifecycle-and-recovery.md)
+- [Milestone 08 — Docker-outside-of-Docker](docs/milestones/milestone-08-docker-outside-of-docker.md)

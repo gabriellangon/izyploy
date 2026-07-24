@@ -1,0 +1,7 @@
+.git
+.github
+data
+target
+izyploy.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,28 @@
+services:
+  izyploy:
+    build:
+      context: .
+    image: izyploy:milestone-8
+    container_name: izyploy
+    environment:
+      DATABASE_URL: sqlite:///data/izyploy.db
+      WORKSPACE_ROOT: /data/workspaces
+      BIND_ADDRESS: 0.0.0.0:3000
+      RUNTIME_HOST: host.docker.internal
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - izyploy-data:/data
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  izyploy-data:
