@@ -8,16 +8,25 @@ pub trait ReadinessProbe: Send + Sync {
     fn wait_until_ready(&self, host_port: u16, timeout: Duration) -> ReadinessFuture;
 }
 
-#[derive(Debug, Default)]
-pub struct TcpReadinessProbe;
+#[derive(Debug)]
+pub struct TcpReadinessProbe {
+    host: String,
+}
+
+impl TcpReadinessProbe {
+    pub fn new(host: String) -> Self {
+        Self { host }
+    }
+}
 
 impl ReadinessProbe for TcpReadinessProbe {
     fn wait_until_ready(&self, host_port: u16, timeout: Duration) -> ReadinessFuture {
+        let host = self.host.clone();
         Box::pin(async move {
             let deadline = time::Instant::now() + timeout;
 
             loop {
-                if TcpStream::connect(("127.0.0.1", host_port)).await.is_ok() {
+                if TcpStream::connect((host.as_str(), host_port)).await.is_ok() {
                     return Ok(());
                 }
 

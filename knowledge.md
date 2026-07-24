@@ -264,6 +264,20 @@ Create one when a milestone introduces application code, infrastructure, or a si
   - `running` records are not yet reconciled against the actual Docker engine;
   - automatic retry, durable jobs, and distributed recovery remain deferred.
 
+### D-023 — Containerized Docker-outside-of-Docker control plane
+
+- Date: 2026-07-22
+- Status: accepted
+- Decision: Izyploy is built as a multi-stage Debian image containing the release Rust binary, Git, CA certificates, curl, Docker CLI 29.1.5, and its Buildx plugin. Compose runs Izyploy with a persistent `/data` volume and mounts the host Docker socket at `/var/run/docker.sock`. The API listens on `0.0.0.0:3000` inside the container but is published only on host loopback. Application containers remain siblings created by the host engine. `RUNTIME_HOST=host.docker.internal`, backed by the host-gateway mapping, lets the Izyploy container probe host-published application ports while returned URLs remain host-facing loopback URLs.
+- Reason: Docker-outside-of-Docker avoids nesting a second daemon and preserves the already validated Docker lifecycle. Separate bind and readiness addresses are required because container loopback is not host loopback. A named volume preserves SQLite and workspaces across control-plane container replacement.
+- Constraints:
+  - mounting the Docker socket grants effectively administrative control over the host;
+  - the initial runtime container runs as root because portable Docker-socket group mapping is deferred;
+  - the API and deployed application ports remain loopback-only until public routing is introduced;
+  - `DOCKER_SOCKET_PATH` can override the host socket source when `/var/run/docker.sock` is unavailable;
+  - Compose is used to operate Izyploy itself, not as an accepted application deployment format;
+  - this is still a single-host architecture.
+
 ## Open decisions
 
 - No technical decision is currently open.
@@ -271,16 +285,17 @@ Create one when a milestone introduces application code, infrastructure, or a si
 ## Current state
 
 - Milestone 1 validation: explicitly accepted on 2026-07-16 after the complete Docker lifecycle and its documentation were reviewed.
-- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build; milestone 6 — application start and exposure; milestone 7 — logs, deletion, and recovery.
+- Completed milestones: milestone 0 — project framing; milestone 1 — manual Docker workflow; milestone 2 — Rust API skeleton; milestone 3 — application model and persistence; milestone 4 — background Git clone; milestone 5 — Docker image build; milestone 6 — application start and exposure; milestone 7 — logs, deletion, and recovery; milestone 8 — containerize Izyploy.
 - Milestone 2 validation: explicitly accepted on 2026-07-21 after the API structure, health route, shared state, logging, tests, and learning summary were reviewed.
 - Milestone 3 validation: explicitly accepted on 2026-07-21 after persistence, validation, API routes, restart behavior, routing ownership, and learning outcomes were reviewed.
 - Milestone 4 validation: explicitly accepted on 2026-07-22 after serialized background cloning, persisted logs, workspace confinement, source validation, failure handling, and learning outcomes were reviewed.
 - Milestone 5 validation: explicitly accepted on 2026-07-22 after the end-to-end deployment permit, managed image tags and labels, `image_ready` state, persisted build logs, automated tests, and real Docker build were reviewed.
 - Milestone 6 validation: explicitly accepted on 2026-07-22 after resource-limited container startup, dynamic loopback port publication, readiness verification, persisted URL, automated tests, and the complete API-to-HTTP flow were reviewed.
 - Milestone 7 validation: explicitly accepted on 2026-07-22 after ordered HTTP logs, idempotent cleanup, missing-resource tolerance, failed-cleanup preservation, restart recovery, automated tests, and the real create-to-delete lifecycle were reviewed.
-- Current milestone: none; milestone 7 is complete and milestone 8 has not started.
-- Current branch: `main` after milestone 7 integration.
-- Application code: the complete deployment pipeline is observable through HTTP logs, deletable through serialized idempotent cleanup, and protected against misleading transient states after an Izyploy restart.
+- Milestone 8 validation: explicitly accepted on 2026-07-24 after the multi-stage image, Compose configuration, Docker-outside-of-Docker architecture, sibling application containers, persistent control-plane data, automated checks, and the complete containerized lifecycle were reviewed.
+- Current milestone: none; milestone 8 is complete and milestone 9 has not started.
+- Current branch: `main` after milestone 8 integration.
+- Application code: the complete lifecycle now also runs from a containerized Izyploy control plane that creates sibling application containers through the host Docker socket and persists state under `/data`.
 - Selected test repository: `izyploy-examples`, organized as one application per build-context subdirectory.
 - Example repository status: pull request `gabriellangon/izyploy-examples#2` was validated and merged into its `main` branch as commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
 - Local example workspace: `/Users/gabriel.maomy/Projects/izyploy-examples`, clean and synchronized with `origin/main` at commit `c508a3c6aa683d2a5445859da4104b5ae2bf7360`.
@@ -292,4 +307,4 @@ Create one when a milestone introduces application code, infrastructure, or a si
 - Manual cleanup: `izyploy-php-manual` was stopped and removed, then `izyploy-example-php:milestone-1` was removed; follow-up Docker queries confirmed that neither resource remains.
 - Manual workflow documentation: `docs/milestones/milestone-01-manual-docker-workflow.md` reproduces the verified PHP image, container, HTTP verification, inspection, and cleanup lifecycle.
 - Milestone 1 integration: `feat/milestone-1-docker-manual` was merged into `main` as commit `6ccdfd0`.
-- Next action: start milestone 8 locally and keep its implementation uncommitted and unpublished until explicit validation.
+- Next action: explain milestone 9 and create its short-lived branch only after the user chooses to begin it.

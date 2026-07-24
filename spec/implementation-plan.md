@@ -2,9 +2,9 @@
 
 ## Roadmap status
 
-Last updated: 2026-07-22
+Last updated: 2026-07-24
 
-Current milestone: **None — Milestone 7 completed; Milestone 8 not started**
+Current milestone: **None — Milestone 8 completed; Milestone 9 not started**
 
 Legend:
 
@@ -81,7 +81,16 @@ Legend:
   - [x] Mark interrupted startup states as failed after an Izyploy restart.
   - [x] Test logs, repeated deletion, cleanup failures, and recovery.
   - [x] Verify the real create-to-delete lifecycle and document the milestone.
-- [ ] **Milestone 8 — Containerize Izyploy**
+- [x] **Milestone 8 — Containerize Izyploy**
+  - [x] Build Izyploy with a multi-stage Dockerfile.
+  - [x] Include Git, certificates, curl, Docker CLI, and Buildx in the runtime image.
+  - [x] Make the API bind address and runtime readiness host configurable.
+  - [x] Add Compose with loopback API exposure and persistent data.
+  - [x] Mount the host Docker socket and document its administrative privilege.
+  - [x] Verify that deployed applications are sibling containers.
+  - [x] Verify database persistence across an Izyploy container restart.
+  - [x] Verify the complete containerized API-to-application lifecycle.
+  - [x] Document and verify the milestone.
 - [ ] **Milestone 9 — Minimal web interface**
 - [ ] **Milestone 10 — Traefik and subdomains**
 - [ ] **Milestone 11 — VPS deployment**
@@ -308,6 +317,8 @@ Travail :
 - documenter le risque administratif du socket.
 
 Livrable : Izyploy et les applications déployées fonctionnent sur le même hôte Docker.
+
+Document d'apprentissage : [`docs/milestones/milestone-08-docker-outside-of-docker.md`](../docs/milestones/milestone-08-docker-outside-of-docker.md).
 
 Validation : refaire le scénario complet depuis la version conteneurisée.
 
